@@ -71,15 +71,15 @@ No live blockchain node, no internet dependency, no cloud APIs — everything ru
 
 ```
 ┌──────────────────┐     ┌───────────────────┐     ┌────────────────────┐
-│  1. Ingestion      │ →  │ 2. Graph Builder    │ →  │ 3. Feature Engine   │
-│  CSV/JSON/XML      │     │ Wallet–TX–IP graph  │     │ Per-node/edge       │
-│  parser + cleaner  │     │ (NetworkX/Neo4j)    │     │ features             │
+│  1. Ingestion    │     │ 2. Graph Builder  │     │ 3. Feature Engine  │
+│  CSV/JSON/XML    │ →   │ Wallet–TX–IP graph│  →  │ Per-node/edge      │
+│  parser + cleaner│     │ (NetworkX/Neo4j)  │     │ features           │
 └──────────────────┘     └───────────────────┘     └────────┬───────────┘
-                                                              ↓
+                                                            ↓
 ┌──────────────────┐     ┌───────────────────┐     ┌────────────────────┐
-│ 6. Dashboard       │ ←  │ 5. Explainability   │ ←  │ 4. ML Detection     │
-│ Streamlit + link-   │     │ SHAP + composite    │     │ Anomaly detection   │
-│ analysis graph      │     │ risk scoring         │     │ + clustering + GNN  │
+│ 6. Dashboard     │     │ 5. Explainability │     │ 4. ML Detection    │
+│ Streamlit + link-│  ←  │ SHAP + composite  │  ←  │ Anomaly detection  │
+│ analysis graph   │     │ risk scoring      │     │ + clustering + GNN │
 └──────────────────┘     └───────────────────┘     └────────────────────┘
 ```
 
@@ -250,8 +250,9 @@ Model performance is validated against self-injected synthetic ground truth:
 
 | Name | Role |
 |---|---|
-| _Add team member_ | _Role_ |
-| _Add team member_ | _Role_ |
+| _Aditya_ | _Role_ |
+| _Rudra_ | _Role_ |
+| _Sweety_ | _Role_ |
 
 ## License
 
