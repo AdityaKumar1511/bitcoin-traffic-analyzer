@@ -1,0 +1,67 @@
+# High-Risk ASN (Autonomous System Number) Reference List
+# Used by network feature engineering and correlation scoring to flag
+# IPs broadcasting from infrastructure commonly associated with anonymization,
+# bulletproof hosting, or privacy-centric services.
+#
+# Categories:
+#   - Bulletproof hosting: providers known to ignore abuse complaints
+#   - VPN/Proxy services: commercial anonymization infrastructure
+#   - Tor-related: ASNs hosting significant Tor exit node capacity
+#   - Privacy-focused: ISPs/hosting providers in privacy-friendly jurisdictions
+#
+# Sources: OSINT aggregations, academic research, law enforcement advisories.
+# This list is intentionally conservative — false positives are costly.
+
+# Bulletproof hosting providers
+bulletproof_hosting:
+  - 48031   # PE Ivanov Vitaliy Sergeevich (UA) — known bulletproof hoster
+  - 200391  # FlokiNET (IS/RO) — privacy-focused, abuse-resistant hosting
+  - 59711   # HZ Hosting (NL) — frequently cited in abuse reports
+  - 62005   # BlueAngelHost (BG) — bulletproof hosting provider
+  - 44477   # Stark Industries Solutions (MD)
+  - 49981   # WorldStream (NL) — some bulletproof resellers
+  - 213035  # YISP (NL) — privacy hosting
+  - 60781   # LeaseWeb (NL) — legitimate but high abuse volume
+  - 16276   # OVH (FR) — legitimate but significant abuse hosting
+  - 14061   # DigitalOcean — legitimate but commonly abused for crypto operations
+
+# VPN / Proxy services
+vpn_proxy:
+  - 9009    # M247 — major VPN backend (NordVPN, etc.)
+  - 20473   # Vultr/Choopa — VPN and proxy infrastructure
+  - 396982  # Google Cloud (commonly used for exit nodes)
+  - 13335   # Cloudflare — WARP VPN, proxy services
+  - 40676   # Psychz Networks — VPN/proxy hosting
+  - 36352   # ColoCrossing — VPN hosting
+  - 174     # Cogent — large transit, VPN exit nodes
+  - 206264  # Amarutu Technology (VPN provider)
+  - 51852   # Private Layer (CH) — privacy VPN
+
+# Tor exit node heavy ASNs
+tor_related:
+  - 680     # DFN (DE) — German research network, significant Tor capacity
+  - 553     # BELNET (BE) — Belgian research network, Tor relays
+  - 12876   # Online.net/Scaleway (FR) — heavy Tor exit hosting
+  - 24940   # Hetzner (DE) — significant Tor infrastructure
+  - 47147   # AS-ANX (US) — Tor relay hosting
+  - 58057   # Securebit (CH) — Tor-friendly hosting
+  - 51167   # Contabo (DE) — VPS provider with Tor exits
+
+# Privacy-focused jurisdictions / ISPs
+privacy_focused:
+  - 13213   # UK-2 Group (UK) — offshore privacy hosting
+  - 42708   # Portlane (SE) — Swedish privacy-oriented
+  - 198605  # Bahnhof (SE) — WikiLeaks host, privacy-focused
+  - 25369   # Hydra Communications (UK) — privacy hosting
+  - 34549   # meerfarbig (DE) — privacy hosting
+
+# High-risk countries (ISO codes for network feature geo_risk_score)
+high_risk_countries:
+  - "RU"    # Russia
+  - "CN"    # China
+  - "IR"    # Iran
+  - "KP"    # North Korea
+  - "BY"    # Belarus
+  - "VE"    # Venezuela
+  - "MM"    # Myanmar
+  - "SY"    # Syria
