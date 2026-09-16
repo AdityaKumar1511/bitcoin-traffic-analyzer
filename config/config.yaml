@@ -1,0 +1,7 @@
+# Bitcoin Traffic Analyzer Configuration
+
+paths:
+  geoip_country_db: "data/geoip/GeoLite2-Country.mmdb"
+  geoip_asn_db: "data/geoip/GeoLite2-ASN.mmdb"
+  raw_data: "data/raw"
+  processed_data: "data/processed"

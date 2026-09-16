@@ -1,2 +1,4 @@
 pandas>=2.0.0
 numpy>=1.24.0
+geoip2>=4.8.0
+pyyaml>=6.0
