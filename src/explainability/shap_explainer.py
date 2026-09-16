@@ -12,7 +12,13 @@ from typing import Any, Dict, List, Optional, Tuple, Union
 import numpy as np
 import pandas as pd
 from sklearn.ensemble import IsolationForest
-import shap
+
+try:
+    import shap
+    HAS_SHAP = True
+except ImportError:
+    shap = None
+    HAS_SHAP = False
 
 from src.utils.logging_config import get_logger
 
@@ -53,7 +59,7 @@ class ModelExplainer:
             self.feature_stds[col] = std_val if std_val > 1e-6 else 1.0
 
         try:
-            if isinstance(model, IsolationForest):
+            if HAS_SHAP and isinstance(model, IsolationForest):
                 self.explainer = shap.TreeExplainer(model, data=numeric_df.sample(min(100, len(numeric_df)), random_state=42))
         except Exception as err:
             logger.debug("SHAP TreeExplainer fallback: %s", err)
