@@ -5,3 +5,16 @@ paths:
   geoip_asn_db: "data/geoip/GeoLite2-ASN.mmdb"
   raw_data: "data/raw"
   processed_data: "data/processed"
+
+evasion_detectors:
+  coinjoin:
+    min_inputs: 5
+    min_outputs: 5
+    amount_similarity_threshold: 0.05
+  peel_chain:
+    min_chain_length: 3
+    peel_ratio_threshold: 0.15
+  mixer:
+    time_window_minutes: 60
+    min_sources: 4
+    min_destinations: 4
