@@ -368,34 +368,31 @@ Model performance is validated against self-injected synthetic ground truth:
 
 ## 🗺️ Roadmap
 
-- [ ] Core ingestion pipeline (CSV/JSON/XML)
-- [ ] Graph construction + forensic heuristics
-- [ ] Feature engineering (behavioral + temporal)
-- [ ] Isolation Forest anomaly detection
-- [ ] Autoencoder anomaly detection
-- [ ] Node2Vec + HDBSCAN clustering
-- [ ] Network-blockchain correlation scoring
-- [ ] Multi-hop taint propagation
-- [ ] Evasion-specific detectors (CoinJoin, peel-chain, mixer signatures)
-- [ ] SHAP explainability layer
-- [ ] Composite risk scoring
-- [ ] Streamlit dashboard + link-analysis graph
-- [ ] PDF case report export
-- [ ] Analyst feedback loop
-- [ ] Optional GNN classifier
-- [ ] False-positive stress testing
-- [ ] Technical write-up
-- [ ] Demo video / presentation
+- [x] Core ingestion pipeline (CSV/JSON/XML)
+- [x] Graph construction + forensic heuristics (common-input & change address)
+- [x] Feature engineering (behavioral, network, graph & temporal)
+- [x] Isolation Forest anomaly detection
+- [x] Entity clustering & co-spending components
+- [x] Network-blockchain correlation scoring with ASN calibration
+- [x] Multi-hop taint propagation (poison/haircut risk decay)
+- [x] Evasion-specific detectors (CoinJoin, peel-chain, mixer signatures)
+- [x] SHAP explainability layer & plain-English justifications
+- [x] Composite risk scoring engine
+- [x] BitForge Streamlit dashboard + interactive link-analysis graph
+- [x] PDF & Markdown case report export (court-ready dossiers)
+- [x] Analyst feedback loop (confirm/reject + risk recalibration)
+- [x] Technical write-up (`docs/technical_writeup.md`)
+- [x] Investigator demo script (`docs/demo_script.md`)
 
 ---
 
 ## 👥 Team
 
-| Name | Role |
-|---|---|
-| Aditya | _Role_ |
-| Rudra | _Role_ |
-| Sweety | _Role_ |
+| Name | Role | Track |
+|---|---|---|
+| **Aditya** | ML Modeling, Anomaly Detection & Graph Heuristics | Track 1 — Core ML & Graph |
+| **Rudra** | Ingestion Parsers, GeoIP Enrichment & Feature Engineering | Track 2 — Data Pipeline |
+| **Sweety** | Streamlit Dashboard (BitForge UI), PDF Case Export, Feedback Loop & Documentation | Track 3 — Dashboard, UX & Docs |
 
 ---
 
@@ -410,3 +407,4 @@ This project is licensed under the MIT License — see [LICENSE](LICENSE) for de
 *Submitted for Smart India Hackathon — Problem Statement SIH26146, National Technical Research Organisation (NTRO).*
 
 </div>
+

@@ -1,6 +1,17 @@
 venv/
+.venv/
 __pycache__/
 *.py[cod]
 .ipynb_checkpoints/
+.pytest_cache/
+.DS_Store
 data/geoip/*.mmdb
 *.mmdb
+lib/
+*.log
+data/processed/*
+!data/processed/.gitkeep
+reports/*
+!reports/.gitkeep
+
+
