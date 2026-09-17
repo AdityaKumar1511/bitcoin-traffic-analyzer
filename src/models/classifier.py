@@ -74,3 +74,7 @@ class EntityRiskClassifier:
 
         probas = self.model.predict_proba(numeric_X)[:, 1]
         return pd.Series(np.round(probas, 4), index=X.index)
+
+    def predict_risk_probabilities(self, X: pd.DataFrame) -> pd.Series:
+        """Alias for predict_risk_proba."""
+        return self.predict_risk_proba(X)

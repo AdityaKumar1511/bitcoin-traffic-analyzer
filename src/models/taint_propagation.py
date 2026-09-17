@@ -1,10 +1,10 @@
 """
 Multi-Hop Taint Propagation Module for Forensic Risk Flow Analysis.
 
-Implements the forensic poison/haircut risk propagation model across the
+Implements the forensic poison/proportional haircut risk propagation model across the
 heterogeneous Bitcoin transaction graph. Suspicion scores flow from seed
 suspicious wallets along directed transaction pathways, decaying exponentially
-with hop distance.
+with hop distance and scaled by the proportional output share.
 """
 
 from __future__ import annotations
@@ -29,14 +29,15 @@ logger = get_logger(__name__)
 
 class TaintPropagator:
     """
-    Multi-hop taint propagation engine computing risk decay and provenance paths.
+    Multi-hop taint propagation engine computing risk decay and provenance paths
+    using the proportional haircut model.
     """
 
     def __init__(
         self,
-        decay_factor: float = 0.6,
+        decay_factor: float = 0.65,
         max_hops: int = 4,
-        min_taint_threshold: float = 0.05,
+        min_taint_threshold: float = 0.01,
     ) -> None:
         """
         Initialize Taint Propagator.
@@ -64,12 +65,41 @@ class TaintPropagator:
 
         Returns:
             pd.DataFrame indexed by wallet_id with columns:
-                taint_score (float), taint_hops (int), taint_source (str), taint_path (str)
+                taint_score, taint_hops, hops_from_seed, taint_source,
+                nearest_seed_wallet, taint_path, is_tainted
         """
+        # Collect all wallet nodes in graph
+        all_wallets = [
+            node for node, data in graph.nodes(data=True) if data.get("node_type") == "wallet"
+        ]
+        if not all_wallets and graph.number_of_nodes() > 0:
+            all_wallets = list(graph.nodes())
+
         if not seed_risks or graph.number_of_nodes() == 0:
-            return pd.DataFrame(
-                columns=["taint_score", "taint_hops", "taint_source", "taint_path"]
+            records = []
+            for w in all_wallets:
+                records.append({
+                    "wallet_id": w,
+                    "taint_score": 0.0,
+                    "taint_hops": -1,
+                    "hops_from_seed": -1,
+                    "taint_source": "None",
+                    "nearest_seed_wallet": "None",
+                    "taint_path": "",
+                    "is_tainted": False,
+                })
+            df = pd.DataFrame(records).set_index("wallet_id") if records else pd.DataFrame(
+                columns=[
+                    "taint_score",
+                    "taint_hops",
+                    "hops_from_seed",
+                    "taint_source",
+                    "nearest_seed_wallet",
+                    "taint_path",
+                    "is_tainted",
+                ]
             ).set_index(pd.Index([], name="wallet_id"))
+            return df
 
         # wallet_id -> (max_taint_score, min_hops, seed_source, path_str)
         taint_map: Dict[str, Tuple[float, int, str, str]] = {}
@@ -96,25 +126,34 @@ class TaintPropagator:
             if hop >= self.max_hops:
                 continue
 
-            # In the heterogeneous graph: Wallet -(input)-> Transaction -(output)-> Wallet
-            # Find all outgoing transactions from curr_w
+            # In heterogeneous graph: Wallet -(input)-> Transaction -(output)-> Wallet
             for _, tx_node, edge_data in graph.out_edges(curr_w, data=True):
                 if edge_data.get("edge_type") != "input":
                     continue
 
-                # From the transaction, find all receiving wallets
-                for _, next_w, out_data in graph.out_edges(tx_node, data=True):
-                    if out_data.get("edge_type") != "output" or next_w == curr_w:
-                        continue
+                # Find all outputs from this transaction to compute total output amount
+                out_edges = [
+                    (u, v, d) for u, v, d in graph.out_edges(tx_node, data=True)
+                    if d.get("edge_type") == "output" and v != curr_w
+                ]
+                total_output_amt = sum(d.get("amount", 0.0) for _, _, d in out_edges)
 
-                    # Calculate decayed taint
-                    next_taint = round(curr_taint * self.decay_factor, 4)
+                # From transaction, forward taint to destination wallets
+                for _, next_w, out_data in out_edges:
+                    dest_amt = out_data.get("amount", 0.0)
+                    # Haircut model: fraction of output received
+                    if total_output_amt > 0 and dest_amt > 0:
+                        output_ratio = dest_amt / total_output_amt
+                    else:
+                        output_ratio = 1.0
+
+                    next_taint = round(curr_taint * self.decay_factor * output_ratio, 4)
                     next_hop = hop + 1
 
                     if next_taint < self.min_taint_threshold:
                         continue
 
-                    # Avoid infinite looping on the same (wallet, seed) with greater or equal hops
+                    # Avoid redundant looping with greater or equal hops
                     if next_hop >= visited_hops[(next_w, seed)]:
                         continue
                     visited_hops[(next_w, seed)] = next_hop
@@ -127,95 +166,91 @@ class TaintPropagator:
 
                     queue.append((next_w, next_taint, next_hop, seed, next_path))
 
+        # Include all wallets in the graph
         records = []
-        for w, (score, hops, source, p_str) in taint_map.items():
-            records.append({
-                "wallet_id": w,
-                "taint_score": score,
-                "taint_hops": hops,
-                "taint_source": source,
-                "taint_path": p_str,
-            })
+        for w in all_wallets:
+            if w in taint_map:
+                score, hops, source, p_str = taint_map[w]
+                records.append({
+                    "wallet_id": w,
+                    "taint_score": score,
+                    "taint_hops": hops,
+                    "hops_from_seed": hops,
+                    "taint_source": source,
+                    "nearest_seed_wallet": source,
+                    "taint_path": p_str,
+                    "is_tainted": score >= self.min_taint_threshold,
+                })
+            else:
+                records.append({
+                    "wallet_id": w,
+                    "taint_score": 0.0,
+                    "taint_hops": -1,
+                    "hops_from_seed": -1,
+                    "taint_source": "None",
+                    "nearest_seed_wallet": "None",
+                    "taint_path": "",
+                    "is_tainted": False,
+                })
 
         result_df = pd.DataFrame(records).set_index("wallet_id")
+        total_tainted = int((result_df["taint_score"] >= self.min_taint_threshold).sum())
         logger.info(
             "Taint propagation complete: %d wallets tainted from %d seed sources.",
-            len(result_df),
+            total_tainted,
             len(seed_risks),
         )
         return result_df
 
 
-def run_taint_propagation(
-    input_file: Union[str, Path] = "data/raw/synthetic_transactions.csv",
-    seed_wallet: Optional[str] = None,
+def propagate_taint(
+    graph: nx.MultiDiGraph,
+    seed_wallets: Optional[Dict[str, float]] = None,
+    decay_factor: float = 0.70,
+    max_hops: int = 4,
+    min_taint_threshold: float = 0.01,
 ) -> pd.DataFrame:
-    """Run taint propagation on transaction dataset."""
-    df = parse_file(Path(input_file))
-    graph = build_graph(df)
-    apply_common_input_heuristic(graph, df)
-    apply_change_address_heuristic(graph, df)
+    """
+    Functional wrapper for multi-hop taint propagation with optional auto-seeding.
+    """
+    if seed_wallets is None or len(seed_wallets) == 0:
+        seed_wallets = {}
+        for node, data in graph.nodes(data=True):
+            if data.get("node_type") == "wallet":
+                if data.get("peel_chain_position") == 0:
+                    seed_wallets[node] = 1.0
 
-    seeds: Dict[str, float] = {}
-    if seed_wallet:
-        seeds[seed_wallet] = 1.0
-    else:
-        # Check if ground truth or known ransomware seeds are present
-        gt_path = Path(input_file).parent / "ground_truth.csv"
-        if gt_path.is_file():
-            gt_df = pd.read_csv(gt_path)
-            bad_wallets = gt_df[
-                (gt_df["entity_type"] == "wallet") & (gt_df["is_criminal"])
-            ]["entity_id"].tolist()
-            for w in bad_wallets[:5]:  # Take top 5 seeds
-                seeds[w] = 1.0
-        
-        if not seeds:
-            # Pick highest volume wallet as demo seed
-            all_wallets = get_nodes_by_type(graph, "wallet")
-            if all_wallets:
-                seeds[all_wallets[0]] = 1.0
+    propagator = TaintPropagator(
+        decay_factor=decay_factor,
+        max_hops=max_hops,
+        min_taint_threshold=min_taint_threshold,
+    )
+    return propagator.propagate(graph, seed_wallets)
 
-    propagator = TaintPropagator()
-    return propagator.propagate(graph, seeds)
+
+def _build_parser() -> argparse.ArgumentParser:
+    parser = argparse.ArgumentParser(description="Run Multi-Hop Taint Risk Propagation on Transaction Graph.")
+    parser.add_argument("--data", "-d", type=Path, default=Path("data/raw/synthetic_transactions.csv"))
+    parser.add_argument("--decay", type=float, default=0.65)
+    parser.add_argument("--hops", type=int, default=4)
+    return parser
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Run multi-hop risk taint propagation.")
-    parser.add_argument(
-        "--input",
-        "-i",
-        type=str,
-        default="data/raw/synthetic_transactions.csv",
-        help="Path to transaction file",
-    )
-    parser.add_argument(
-        "--seed",
-        "-s",
-        type=str,
-        default=None,
-        help="Specific seed wallet address to trace taint from",
-    )
-    args = parser.parse_args()
+    args = _build_parser().parse_args()
 
-    taint_df = run_taint_propagation(args.input, seed_wallet=args.seed)
+    print(f"[*] Ingesting transactions from: {args.data}")
+    df = parse_file(args.data)
+    graph = build_graph(df)
+
+    taint_df = propagate_taint(graph, decay_factor=args.decay, max_hops=args.hops)
 
     print("\n" + "=" * 65)
-    print("           MULTI-HOP TAINT PROPAGATION SUMMARY")
+    print("                 TAINT PROPAGATION SUMMARY")
     print("=" * 65)
-    print(f"Total Tainted Wallets: {len(taint_df):,}")
-
-    top_tainted = taint_df.sort_values(by=["taint_score", "taint_hops"], ascending=[False, True]).head(10)
-    print("\n--- TOP TAINTED ENTITIES ---")
-    for w_id, row in top_tainted.iterrows():
-        print(
-            f"  Wallet: {w_id}\n"
-            f"    Score: {row['taint_score']:.4f} | Hops: {row['taint_hops']} | "
-            f"Source: {row['taint_source']}\n"
-            f"    Path: {row['taint_path']}"
-        )
-
-    print("=" * 65 + "\n")
+    print(f"Total Wallets Evaluated:    {len(taint_df):,}")
+    print(f"Total Wallets Tainted:      {int(taint_df['is_tainted'].sum()):,}")
+    print("=" * 65)
 
 
 if __name__ == "__main__":
