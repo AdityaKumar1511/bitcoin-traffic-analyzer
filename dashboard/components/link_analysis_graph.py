@@ -1,5 +1,5 @@
 """
-Interactive Link-Analysis Graph Component with BitForge Emerald/Cyber Theme.
+Interactive Link-Analysis Graph Component — Enterprise Forensic Theme.
 """
 
 from __future__ import annotations
@@ -20,17 +20,14 @@ def render_link_analysis_graph(
     max_nodes: int = 45,
 ) -> None:
     """
-    Render interactive Pyvis link-analysis graph with BitForge cyberpunk emerald styling.
+    Render interactive Pyvis link-analysis graph with professional forensic styling.
     """
     st.markdown(
         """
-        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
-            <h4 style="margin: 0; color: #F0FDF4; font-weight: 700;">
-                Forensic Graph Topology & Entity Neighbors
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;">
+            <h4 style="margin: 0; color: #C9D1D9; font-family: 'Inter', sans-serif; font-weight: 600; font-size: 16px;">
+                Graph Topology & Entity Neighbors
             </h4>
-            <span style="color: #00F29B; font-size: 0.8rem; background: rgba(0, 242, 155, 0.1); border: 1px solid rgba(0, 242, 155, 0.2); padding: 2px 10px; border-radius: 12px;">
-                BITFORGE NEURAL GRAPH
-            </span>
         </div>
         """,
         unsafe_allow_html=True,
@@ -57,12 +54,12 @@ def render_link_analysis_graph(
     subgraph_nodes = list(nodes_to_include)[:max_nodes]
     subgraph = graph.subgraph(subgraph_nodes)
 
-    # Build Pyvis interactive network with BitForge dark emerald canvas
+    # Build Pyvis interactive network with professional dark canvas
     net = Network(
-        height="500px",
+        height="520px",
         width="100%",
-        bgcolor="#060C09",
-        font_color="#F0FDF4",
+        bgcolor="#000000",
+        font_color="#C9D1D9",
         directed=True,
     )
     net.force_atlas_2based(
@@ -73,31 +70,31 @@ def render_link_analysis_graph(
         damping=0.4,
     )
 
-    # Style and add nodes matching BitForge screenshot colors
+    # Style and add nodes with professional muted palette
     for node, data in subgraph.nodes(data=True):
         node_type = data.get("node_type", "wallet")
         label = str(node)[:10] + "..." if len(str(node)) > 14 else str(node)
-        
+
         if node == focused_wallet:
-            # BitForge Glowing Hexagon Hub for Target
+            # Target entity — slate blue, prominent but not glowing
             net.add_node(
                 node,
-                label=f"🎯 {label}",
+                label=label,
                 title=f"TARGET ENTITY:\n{node}",
-                color={"background": "#00F29B", "border": "#FFFFFF", "highlight": {"background": "#00DC82", "border": "#00F29B"}},
-                borderWidth=3,
-                size=34,
+                color={"background": "#5B8DEF", "border": "#C9D1D9",
+                       "highlight": {"background": "#4A7AD8", "border": "#5B8DEF"}},
+                borderWidth=2,
+                size=30,
                 shape="hexagon",
-                shadow={"enabled": True, "color": "rgba(0, 242, 155, 0.8)", "size": 15},
             )
         elif node_type == "wallet":
             net.add_node(
                 node,
                 label=label,
                 title=f"Wallet: {node}",
-                color={"background": "#10B981", "border": "#34D399"},
-                borderWidth=1.5,
-                size=20,
+                color={"background": "#2EA043", "border": "#3FB950"},
+                borderWidth=1,
+                size=18,
                 shape="dot",
             )
         elif node_type == "transaction":
@@ -107,42 +104,46 @@ def render_link_analysis_graph(
                 node,
                 label=f"TX: {label}",
                 title=f"TXID: {node}{fee_str}{script_str}",
-                color={"background": "#06B6D4", "border": "#67E8F9"},
-                borderWidth=1.5,
-                size=18,
+                color={"background": "#6E7681", "border": "#8B949E"},
+                borderWidth=1,
+                size=16,
                 shape="square",
             )
         elif node_type == "ip":
             net.add_node(
                 node,
-                label=f"🌐 {label}",
+                label=label,
                 title=f"Broadcasting IP: {node}",
-                color={"background": "#8B5CF6", "border": "#C4B5FD"},
-                borderWidth=2,
-                size=22,
+                color={"background": "#BB8009", "border": "#D29922"},
+                borderWidth=1.5,
+                size=20,
                 shape="diamond",
-                shadow={"enabled": True, "color": "rgba(139, 92, 246, 0.5)", "size": 10},
             )
         else:
-            net.add_node(node, label=label, color="#94A3B8", size=15)
+            net.add_node(node, label=label, color="#8B949E", size=14)
 
-    # Add edges with glowing cyber lines
+    # Add edges with muted, professional colors
     for u, v, k, edata in subgraph.edges(data=True, keys=True):
         edge_type = edata.get("edge_type", "link")
         amt = edata.get("amount")
         amt_label = f"{amt:.3f} BTC" if amt is not None else ""
 
         if edge_type == "input":
-            net.add_edge(u, v, title=f"Input Inflow: {amt_label}", label=amt_label, color={"color": "#10B981", "highlight": "#00F29B"}, width=2.0)
+            net.add_edge(u, v, title=f"Input Inflow: {amt_label}", label=amt_label,
+                         color={"color": "#3FB950", "highlight": "#56D364"}, width=1.8)
         elif edge_type == "output":
             is_change = edata.get("likely_change_address", False)
-            edge_color = "#FF80AB" if is_change else "#00F29B"
+            edge_color = "#D29922" if is_change else "#5B8DEF"
             label_suffix = " (Change)" if is_change else ""
-            net.add_edge(u, v, title=f"Output Outflow: {amt_label}{label_suffix}", label=f"{amt_label}{label_suffix}", color={"color": edge_color, "highlight": "#FFFFFF"}, width=2.2)
+            net.add_edge(u, v, title=f"Output Outflow: {amt_label}{label_suffix}",
+                         label=f"{amt_label}{label_suffix}",
+                         color={"color": edge_color, "highlight": "#C9D1D9"}, width=1.8)
         elif edge_type == "broadcast":
-            net.add_edge(u, v, title="P2P Broadcast Relay", label="relayed", color={"color": "#C4B5FD"}, dashes=True, width=1.2)
+            net.add_edge(u, v, title="P2P Broadcast Relay", label="relayed",
+                         color={"color": "#8B949E"}, dashes=True, width=1.0)
         elif edge_type == "common_input_ownership":
-            net.add_edge(u, v, title="Co-Input Common Ownership", label="co-spend", color={"color": "#EC4899"}, dashes=True, width=2.0)
+            net.add_edge(u, v, title="Co-Input Common Ownership", label="co-spend",
+                         color={"color": "#DA3633"}, dashes=True, width=1.6)
 
     # Render HTML in temp file
     with tempfile.NamedTemporaryFile(suffix=".html", delete=False, mode="w", encoding="utf-8") as tf:
@@ -150,15 +151,34 @@ def render_link_analysis_graph(
         with open(tf.name, "r", encoding="utf-8") as f_html:
             html_content = f_html.read()
 
-    components.html(html_content, height=520, scrolling=True)
+    components.html(html_content, height=540, scrolling=True)
+
+    # Clean legend with CSS dots — no emojis
     st.markdown(
         """
-        <div style="display: flex; gap: 16px; flex-wrap: wrap; background: rgba(13, 27, 19, 0.5); padding: 8px 14px; border-radius: 8px; border: 1px solid rgba(0, 242, 155, 0.1); font-size: 0.8rem; color: #94A3B8;">
-            <span>🟢 <b style="color: #00F29B;">Target Focus</b></span>
-            <span>🟢 <b style="color: #10B981;">Wallets</b></span>
-            <span>🔷 <b style="color: #06B6D4;">Transactions</b></span>
-            <span>🟣 <b style="color: #8B5CF6;">Broadcasting IPs</b></span>
-            <span>⚡ <b style="color: #EC4899;">Co-Spend Link</b></span>
+        <div style="display: flex; gap: 24px; flex-wrap: wrap; background: #14181F; padding: 10px 16px;
+                    border-radius: 6px; border: 1px solid #21262D; font-size: 12px; color: #8B949E;
+                    font-family: 'Inter', sans-serif; margin-top: 8px;">
+            <span style="display: inline-flex; align-items: center; gap: 6px;">
+                <span style="display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: #5B8DEF;"></span>
+                <b style="color: #C9D1D9;">Target</b>
+            </span>
+            <span style="display: inline-flex; align-items: center; gap: 6px;">
+                <span style="display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: #3FB950;"></span>
+                <b style="color: #C9D1D9;">Wallets</b>
+            </span>
+            <span style="display: inline-flex; align-items: center; gap: 6px;">
+                <span style="display: inline-block; width: 8px; height: 8px; background: #8B949E;"></span>
+                <b style="color: #C9D1D9;">Transactions</b>
+            </span>
+            <span style="display: inline-flex; align-items: center; gap: 6px;">
+                <span style="display: inline-block; width: 8px; height: 8px; background: #D29922; transform: rotate(45deg);"></span>
+                <b style="color: #C9D1D9;">Broadcasting IPs</b>
+            </span>
+            <span style="display: inline-flex; align-items: center; gap: 6px;">
+                <span style="display: inline-block; width: 12px; height: 2px; background: #DA3633;"></span>
+                <b style="color: #C9D1D9;">Co-Spend Link</b>
+            </span>
         </div>
         """,
         unsafe_allow_html=True,

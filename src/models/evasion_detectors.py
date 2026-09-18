@@ -411,14 +411,22 @@ def main() -> None:
                     & (gt_df["entity_type"] == "wallet")
                 ]["entity_id"]
             )
-            detected_peel_wallets = {
-                w for pc in peel_chains for w in pc.get("chain_wallets", [])
-            }
+            detected_peel_wallets = set()
+            for pc in peel_chains:
+                detected_peel_wallets.update(pc.get("chain_wallets", []))
+                detected_peel_wallets.update(pc.get("feeder_wallets", []))
+            detected_peel_txids = set()
+            for pc in peel_chains:
+                detected_peel_txids.update(pc.get("chain_txids", []))
+                detected_peel_txids.update(pc.get("feeder_txids", []))
             peel_overlap = detected_peel_wallets.intersection(gt_peel_wallets)
-            print(f"\nRansomware Peel Chains (Carrier Wallets):")
-            print(f"  Detected Carriers: {len(detected_peel_wallets):,} | Overlap with GT: {len(peel_overlap):,}")
-            if peel_overlap:
-                print(f"  Identified Carrier Addresses: {list(peel_overlap)}")
+            print(f"\nRansomware Peel Chains (All Pattern Wallets):")
+            print(f"  Ground Truth Wallets: {len(gt_peel_wallets):,} | Detected: {len(detected_peel_wallets):,} | Overlap: {len(peel_overlap):,}")
+            if gt_peel_wallets:
+                print(f"  Recall: {len(peel_overlap) / len(gt_peel_wallets):.1%}")
+            missing = gt_peel_wallets - detected_peel_wallets
+            if missing:
+                print(f"  Missing ({len(missing)}): {sorted(missing)[:5]}{'...' if len(missing) > 5 else ''}")
 
             # C. Same actor cluster check
             gt_cluster_wallets = set(

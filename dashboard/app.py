@@ -1,6 +1,6 @@
 """
 Streamlit Dashboard for Bitcoin Traffic Analyzer.
-Theme: BitForge Cyberpunk Emerald & Neon Mint UI.
+Theme: Enterprise Forensic Analytics — Professional Dark Interface.
 """
 
 from __future__ import annotations
@@ -34,196 +34,456 @@ from src.utils.paths import get_project_root
 # Page configuration
 st.set_page_config(
     page_title="BitForge | Bitcoin Traffic Analyzer",
-    page_icon="🔗",
+    page_icon="⛓",
     layout="wide",
     initial_sidebar_state="collapsed",
 )
 
-# BitForge Theme CSS Injection
+# Enterprise Forensic Theme — Global CSS Override
 st.markdown(
     """
     <style>
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
 
-    /* Global Dark Emerald Canvas */
-    .stApp {
-        background: radial-gradient(circle at 50% 10%, rgba(0, 242, 155, 0.12) 0%, rgba(6, 12, 9, 0.98) 75%), #060C09;
-        font-family: 'Inter', -apple-system, sans-serif;
-        color: #F0FDF4;
+    /* ===== DESIGN TOKENS ===== */
+    :root {
+        --bg-base: #000000;
+        --bg-surface: #14181F;
+        --bg-elevated: #1B2029;
+        --border: #21262D;
+        --border-emphasis: #30363D;
+        --text-primary: #C9D1D9;
+        --text-secondary: #8B949E;
+        --text-muted: #6E7681;
+        --accent: #5B8DEF;
+        --accent-subtle: rgba(91, 141, 239, 0.12);
+        --severity-critical: #DA3633;
+        --severity-high: #D29922;
+        --severity-medium: #8B949E;
+        --severity-low: #3FB950;
+        --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+        --font-mono: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', monospace;
+        --radius-sm: 4px;
+        --radius-md: 6px;
+        --radius-lg: 8px;
+        --space-1: 4px;
+        --space-2: 8px;
+        --space-3: 12px;
+        --space-4: 16px;
+        --space-5: 24px;
+        --space-6: 32px;
     }
 
-    /* Top Navigation Bar */
+    /* ===== GLOBAL CANVAS ===== */
+    .stApp {
+        background: var(--bg-base) !important;
+        font-family: var(--font-sans) !important;
+        color: var(--text-primary) !important;
+    }
+
+    /* Remove default Streamlit header/footer decorations */
+    header[data-testid="stHeader"] {
+        background: var(--bg-base) !important;
+        border-bottom: 1px solid var(--border) !important;
+    }
+
+    footer { display: none !important; }
+    #MainMenu { display: none !important; }
+
+    /* ===== TOP NAVBAR ===== */
     .navbar {
         display: flex;
         align-items: center;
         justify-content: space-between;
-        padding: 16px 24px;
-        background: rgba(13, 27, 19, 0.75);
-        border: 1px solid rgba(0, 242, 155, 0.2);
-        border-radius: 16px;
-        backdrop-filter: blur(16px);
-        margin-bottom: 24px;
-        box-shadow: 0 10px 30px -5px rgba(0, 242, 155, 0.08);
+        padding: var(--space-3) var(--space-5);
+        background: var(--bg-surface);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-lg);
+        margin-bottom: var(--space-5);
     }
 
     .brand-title {
-        font-size: 1.4rem;
-        font-weight: 800;
-        background: linear-gradient(135deg, #FFFFFF 0%, #A7F3D0 50%, #00F29B 100%);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        letter-spacing: -0.02em;
+        font-size: 15px;
+        font-weight: 600;
+        color: #C9D1D9;
+        letter-spacing: -0.01em;
     }
 
-    .nav-links {
-        display: flex;
-        gap: 20px;
+    .brand-divider {
+        color: var(--text-muted);
+        font-size: 14px;
+        font-weight: 400;
+    }
+
+    .status-indicator {
+        display: inline-flex;
         align-items: center;
-    }
-
-    .nav-item {
-        color: #94A3B8;
-        font-size: 0.9rem;
+        gap: 6px;
+        color: var(--text-secondary);
+        font-size: 12px;
         font-weight: 500;
-        text-decoration: none;
-        transition: color 0.2s ease;
     }
 
-    .nav-item.active {
-        color: #00F29B;
-        font-weight: 600;
+    .status-dot {
+        display: inline-block;
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        background: var(--severity-low);
     }
 
-    .badge-status {
-        background: rgba(0, 242, 155, 0.15);
-        color: #00F29B;
-        border: 1px solid rgba(0, 242, 155, 0.3);
-        padding: 4px 12px;
-        border-radius: 20px;
-        font-size: 0.8rem;
-        font-weight: 600;
-    }
-
-    /* BitForge Hero Section */
+    /* ===== HERO SECTION ===== */
     .hero-container {
-        text-align: center;
-        padding: 24px 12px 32px 12px;
+        padding: var(--space-5) var(--space-3) var(--space-6) var(--space-3);
     }
 
     .hero-heading {
-        font-size: 2.4rem;
-        font-weight: 800;
-        letter-spacing: -0.03em;
-        line-height: 1.2;
-        background: linear-gradient(180deg, #FFFFFF 0%, #E2E8F0 60%, #00F29B 100%);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        margin-bottom: 8px;
+        font-size: 24px;
+        font-weight: 700;
+        letter-spacing: -0.02em;
+        line-height: 1.3;
+        color: var(--text-primary);
+        margin-bottom: var(--space-2);
     }
 
     .hero-subtitle {
-        color: #94A3B8;
-        font-size: 1.05rem;
-        max-width: 750px;
-        margin: 0 auto;
-        line-height: 1.5;
+        color: var(--text-secondary);
+        font-size: 14px;
+        max-width: 680px;
+        line-height: 1.6;
     }
 
-    /* KPI Glassmorphism Cards */
+    /* ===== KPI METRIC CARDS ===== */
     .kpi-card {
-        background: rgba(13, 27, 19, 0.7);
-        border: 1px solid rgba(0, 242, 155, 0.18);
-        border-radius: 14px;
-        padding: 18px 20px;
-        backdrop-filter: blur(14px);
-        box-shadow: 0 8px 24px -4px rgba(0, 242, 155, 0.08);
-        transition: transform 0.2s ease, border-color 0.2s ease;
-    }
-
-    .kpi-card:hover {
-        transform: translateY(-2px);
-        border-color: rgba(0, 242, 155, 0.4);
+        background: var(--bg-surface);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-lg);
+        padding: var(--space-4);
+        min-height: 100px;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
     }
 
     .kpi-label {
-        font-size: 0.8rem;
-        color: #94A3B8;
+        font-size: 11px;
+        color: var(--text-secondary);
         text-transform: uppercase;
         letter-spacing: 0.05em;
-        margin-bottom: 6px;
+        font-weight: 500;
+        margin-bottom: var(--space-2);
     }
 
     .kpi-value {
-        font-size: 1.8rem;
-        font-weight: 800;
-        color: #F8FAFC;
-        margin-bottom: 6px;
+        font-size: 28px;
+        font-weight: 700;
+        color: var(--text-primary);
+        line-height: 1.2;
+        margin-bottom: var(--space-1);
     }
 
-    .kpi-pill {
-        display: inline-flex;
-        align-items: center;
-        gap: 4px;
-        font-size: 0.75rem;
-        font-weight: 600;
-        padding: 2px 8px;
-        border-radius: 12px;
+    .kpi-secondary {
+        font-size: 12px;
+        color: var(--text-muted);
+        font-weight: 400;
     }
 
-    .pill-green {
-        background: rgba(0, 242, 155, 0.15);
-        color: #00F29B;
-    }
-
-    .pill-red {
-        background: rgba(255, 75, 75, 0.15);
-        color: #FF4B4B;
-    }
-
-    /* Tabs Styling */
+    /* ===== TABS ===== */
     .stTabs [data-baseweb="tab-list"] {
-        gap: 8px;
-        background-color: rgba(13, 27, 19, 0.6);
-        padding: 6px;
-        border-radius: 12px;
-        border: 1px solid rgba(0, 242, 155, 0.15);
+        gap: 0;
+        background-color: transparent;
+        padding: 0;
+        border-bottom: 1px solid var(--border);
+        border-radius: 0;
+        border: none;
+        border-bottom: 1px solid var(--border);
     }
 
     .stTabs [data-baseweb="tab"] {
-        border-radius: 8px;
-        color: #94A3B8;
-        padding: 8px 18px;
-        font-weight: 600;
+        border-radius: 0;
+        color: var(--text-secondary);
+        padding: var(--space-3) var(--space-4);
+        font-weight: 500;
+        font-size: 13px;
+        font-family: var(--font-sans);
+        border-bottom: 2px solid transparent;
+        background: transparent !important;
+        transition: color 0.15s ease, border-color 0.15s ease;
+    }
+
+    .stTabs [data-baseweb="tab"]:hover {
+        color: var(--text-primary);
     }
 
     .stTabs [aria-selected="true"] {
-        background-color: rgba(0, 242, 155, 0.15) !important;
-        color: #00F29B !important;
-        border: 1px solid rgba(0, 242, 155, 0.3) !important;
+        background: transparent !important;
+        color: var(--accent) !important;
+        border: none !important;
+        border-bottom: 2px solid var(--accent) !important;
+        font-weight: 600;
     }
 
-    /* Streamlit Custom Overrides */
+    .stTabs [data-baseweb="tab-highlight"] {
+        display: none !important;
+    }
+
+    .stTabs [data-baseweb="tab-border"] {
+        display: none !important;
+    }
+
+    /* ===== BUTTONS ===== */
     div.stButton > button {
-        background: linear-gradient(135deg, #00F29B 0%, #059669 100%);
-        color: #06120B;
-        font-weight: 700;
-        border: none;
-        border-radius: 20px;
-        padding: 8px 24px;
-        transition: all 0.2s ease;
-        box-shadow: 0 4px 14px 0 rgba(0, 242, 155, 0.35);
+        background: var(--accent) !important;
+        color: #FFFFFF !important;
+        font-weight: 600 !important;
+        font-size: 13px !important;
+        border: none !important;
+        border-radius: var(--radius-md) !important;
+        padding: 8px 20px !important;
+        font-family: var(--font-sans) !important;
+        transition: background 0.15s ease, opacity 0.15s ease !important;
+        box-shadow: none !important;
     }
 
     div.stButton > button:hover {
-        transform: scale(1.02);
-        box-shadow: 0 6px 20px 0 rgba(0, 242, 155, 0.5);
+        background: #4A7AD8 !important;
+        transform: none !important;
+        box-shadow: none !important;
     }
 
-    /* Dataframe container */
+    div.stButton > button:active {
+        background: #3D6BC4 !important;
+    }
+
+    /* Secondary / form submit buttons */
+    div.stFormSubmitButton > button {
+        background: var(--bg-elevated) !important;
+        color: var(--text-primary) !important;
+        border: 1px solid var(--border-emphasis) !important;
+        box-shadow: none !important;
+    }
+
+    div.stFormSubmitButton > button:hover {
+        background: var(--border) !important;
+        border-color: var(--text-muted) !important;
+    }
+
+    /* ===== DOWNLOAD BUTTONS ===== */
+    div.stDownloadButton > button {
+        background: var(--bg-elevated) !important;
+        color: var(--text-primary) !important;
+        border: 1px solid var(--border-emphasis) !important;
+        box-shadow: none !important;
+        font-weight: 500 !important;
+    }
+
+    div.stDownloadButton > button:hover {
+        background: var(--border) !important;
+    }
+
+    /* ===== INPUTS, SELECTS, SLIDERS ===== */
+    div[data-baseweb="select"] {
+        font-family: var(--font-sans) !important;
+    }
+
+    div[data-baseweb="select"] > div {
+        background: var(--bg-surface) !important;
+        border-color: var(--border) !important;
+        border-radius: var(--radius-md) !important;
+    }
+
+    .stTextInput > div > div > input {
+        background: var(--bg-surface) !important;
+        border: 1px solid var(--border) !important;
+        border-radius: var(--radius-md) !important;
+        color: var(--text-primary) !important;
+        font-family: var(--font-sans) !important;
+    }
+
+    .stTextInput > div > div > input:focus {
+        border-color: var(--accent) !important;
+        box-shadow: 0 0 0 1px var(--accent) !important;
+    }
+
+    .stSlider [data-baseweb="slider"] [role="slider"] {
+        background: var(--accent) !important;
+        border-color: var(--accent) !important;
+        box-shadow: none !important;
+    }
+
+    .stSlider [data-baseweb="slider"] div[data-testid="stTickBar"] {
+        background: var(--border) !important;
+    }
+
+    /* Slider track */
+    .stSlider > div > div > div > div {
+        background: var(--border) !important;
+    }
+
+    /* ===== DATAFRAMES / TABLES ===== */
     [data-testid="stDataFrame"] {
-        border-radius: 12px;
-        overflow: hidden;
-        border: 1px solid rgba(0, 242, 155, 0.15);
+        border-radius: var(--radius-lg) !important;
+        overflow: hidden !important;
+        border: 1px solid var(--border) !important;
+    }
+
+    .stDataFrame [data-testid="glideDataEditor"] {
+        border-radius: var(--radius-lg) !important;
+    }
+
+    /* Table component */
+    .stTable table {
+        border: 1px solid var(--border) !important;
+        border-radius: var(--radius-md) !important;
+    }
+
+    .stTable th {
+        background: var(--bg-elevated) !important;
+        color: var(--text-secondary) !important;
+        font-weight: 600 !important;
+        font-size: 12px !important;
+        text-transform: uppercase !important;
+        letter-spacing: 0.03em !important;
+        border-bottom: 1px solid var(--border) !important;
+    }
+
+    .stTable td {
+        border-bottom: 1px solid var(--border) !important;
+        font-family: var(--font-sans) !important;
+        color: var(--text-primary) !important;
+    }
+
+    /* ===== EXPANDERS ===== */
+    .streamlit-expanderHeader {
+        background: var(--bg-surface) !important;
+        border: 1px solid var(--border) !important;
+        border-radius: var(--radius-md) !important;
+        color: var(--text-primary) !important;
+        font-weight: 500 !important;
+        font-size: 14px !important;
+    }
+
+    details[data-testid="stExpander"] {
+        border: 1px solid var(--border) !important;
+        border-radius: var(--radius-lg) !important;
+        background: var(--bg-surface) !important;
+    }
+
+    details[data-testid="stExpander"] summary {
+        color: var(--text-primary) !important;
+        font-weight: 500 !important;
+    }
+
+    /* ===== METRICS (st.metric) ===== */
+    [data-testid="stMetric"] {
+        background: var(--bg-surface) !important;
+        border: 1px solid var(--border) !important;
+        border-radius: var(--radius-lg) !important;
+        padding: var(--space-4) !important;
+    }
+
+    [data-testid="stMetric"] label {
+        color: var(--text-secondary) !important;
+        font-size: 11px !important;
+        text-transform: uppercase !important;
+        letter-spacing: 0.04em !important;
+    }
+
+    [data-testid="stMetric"] [data-testid="stMetricValue"] {
+        color: var(--text-primary) !important;
+        font-weight: 700 !important;
+    }
+
+    /* ===== ALERTS / INFO BOXES ===== */
+    .stAlert {
+        border-radius: var(--radius-md) !important;
+        border: 1px solid var(--border) !important;
+    }
+
+    /* ===== HORIZONTAL RULES ===== */
+    hr {
+        border-color: var(--border) !important;
+    }
+
+    /* ===== SECTION HEADERS ===== */
+    .stApp h1, .stApp h2, .stApp h3, .stApp h4, .stApp h5, .stApp h6 {
+        font-family: var(--font-sans) !important;
+        color: var(--text-primary) !important;
+    }
+
+    .stApp h3 {
+        font-size: 16px !important;
+        font-weight: 600 !important;
+        letter-spacing: -0.01em !important;
+    }
+
+    .stApp h4 {
+        font-size: 14px !important;
+        font-weight: 600 !important;
+        letter-spacing: -0.005em !important;
+        color: var(--text-primary) !important;
+    }
+
+    /* ===== MULTISELECT CHIPS ===== */
+    span[data-baseweb="tag"] {
+        background: var(--bg-elevated) !important;
+        border: 1px solid var(--border-emphasis) !important;
+        border-radius: var(--radius-sm) !important;
+        color: var(--text-primary) !important;
+        font-size: 12px !important;
+        max-width: none !important;
+    }
+
+    /* ===== CODE BLOCKS ===== */
+    .stCodeBlock, code, pre {
+        font-family: var(--font-mono) !important;
+    }
+
+    /* ===== SPINNER ===== */
+    .stSpinner > div {
+        border-top-color: var(--accent) !important;
+    }
+
+    /* ===== TEXT AREA ===== */
+    .stTextArea textarea {
+        background: var(--bg-surface) !important;
+        border: 1px solid var(--border) !important;
+        border-radius: var(--radius-md) !important;
+        color: var(--text-primary) !important;
+        font-family: var(--font-sans) !important;
+    }
+
+    .stTextArea textarea:focus {
+        border-color: var(--accent) !important;
+        box-shadow: 0 0 0 1px var(--accent) !important;
+    }
+
+    /* ===== CAPTIONS ===== */
+    .stCaption, [data-testid="stCaptionContainer"] {
+        color: var(--text-muted) !important;
+        font-size: 12px !important;
+    }
+
+    /* ===== PLOTLY CHART OVERRIDES ===== */
+    .stPlotlyChart {
+        border-radius: var(--radius-lg) !important;
+        overflow: hidden !important;
+    }
+
+    /* ===== FORM CONTAINERS ===== */
+    [data-testid="stForm"] {
+        border: 1px solid var(--border) !important;
+        border-radius: var(--radius-lg) !important;
+        padding: var(--space-4) !important;
+        background: var(--bg-surface) !important;
+    }
+
+    /* ===== SELECTBOX ===== */
+    .stSelectbox label, .stMultiSelect label, .stSlider label, .stTextInput label, .stTextArea label {
+        color: var(--text-secondary) !important;
+        font-size: 13px !important;
+        font-weight: 500 !important;
+        font-family: var(--font-sans) !important;
     }
     </style>
     """,
@@ -288,29 +548,34 @@ def main() -> None:
     root = get_project_root()
     fb_store = FeedbackStore(root / "data" / "processed" / "analyst_feedback.db")
 
-    # Top Navbar matching BitForge aesthetic
+    # Top Navbar — Professional, minimal
     st.markdown(
         """
         <div class="navbar">
-            <div style="display: flex; align-items: center; gap: 12px;">
-                <span style="font-size: 1.6rem;">⚡</span>
+            <div style="display: flex; align-items: center; gap: 10px;">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#5B8DEF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                </svg>
                 <span class="brand-title">BitForge</span>
-                <span style="color: #64748B; font-size: 0.9rem; font-weight: 500;">| Bitcoin Traffic Analyzer</span>
+                <span class="brand-divider">Bitcoin Traffic Analyzer</span>
             </div>
-            <div class="nav-links">
-                <span class="badge-status">🟢 100% OFFLINE SECURE</span>
-                <span style="color: #94A3B8; font-size: 0.85rem;">NTRO · SIH26146</span>
+            <div style="display: flex; align-items: center; gap: 16px;">
+                <span class="status-indicator">
+                    <span class="status-dot"></span>
+                    Offline Secure
+                </span>
+                <span style="color: #6E7681; font-size: 12px;">NTRO · SIH26146</span>
             </div>
         </div>
         """,
         unsafe_allow_html=True,
     )
 
-    # Hero Banner
+    # Hero Section — Clean, understated
     st.markdown(
         """
         <div class="hero-container">
-            <div class="hero-heading">REDEFINING FORENSIC BLOCKCHAIN INTELLIGENCE</div>
+            <div class="hero-heading">Forensic Blockchain Intelligence</div>
             <div class="hero-subtitle">
                 Correlating network-layer P2P broadcast signals with on-chain transaction flows to surface explainable, court-ready investigative leads.
             </div>
@@ -327,7 +592,7 @@ def main() -> None:
             <div class="kpi-card">
                 <div class="kpi-label">Ingested Transactions</div>
                 <div class="kpi-value">{len(raw_df):,}</div>
-                <span class="kpi-pill pill-green">↑ 100% Ingested</span>
+                <span class="kpi-secondary">100% ingested</span>
             </div>
             """,
             unsafe_allow_html=True,
@@ -338,7 +603,7 @@ def main() -> None:
             <div class="kpi-card">
                 <div class="kpi-label">Analyzed Wallets</div>
                 <div class="kpi-value">{len(alerts_df):,}</div>
-                <span class="kpi-pill pill-green">5,814 Clusters</span>
+                <span class="kpi-secondary">5,814 clusters</span>
             </div>
             """,
             unsafe_allow_html=True,
@@ -349,8 +614,8 @@ def main() -> None:
             f"""
             <div class="kpi-card">
                 <div class="kpi-label">Critical Alerts</div>
-                <div class="kpi-value" style="color: {'#FF4B4B' if crit_cnt > 0 else '#00F29B'};">{crit_cnt:,}</div>
-                <span class="kpi-pill pill-red">Action Required</span>
+                <div class="kpi-value">{crit_cnt:,}</div>
+                <span class="kpi-secondary">{"Requires review" if crit_cnt > 0 else "None flagged"}</span>
             </div>
             """,
             unsafe_allow_html=True,
@@ -362,7 +627,7 @@ def main() -> None:
             <div class="kpi-card">
                 <div class="kpi-label">CoinJoin Mixes</div>
                 <div class="kpi-value">{cj_cnt:,}</div>
-                <span class="kpi-pill pill-green">Signature Detected</span>
+                <span class="kpi-secondary">Signature detected</span>
             </div>
             """,
             unsafe_allow_html=True,
@@ -373,7 +638,7 @@ def main() -> None:
             <div class="kpi-card">
                 <div class="kpi-label">Peel Chains</div>
                 <div class="kpi-value">{len(peel_chains):,}</div>
-                <span class="kpi-pill pill-green">Ransomware Flow</span>
+                <span class="kpi-secondary">Ransomware flow</span>
             </div>
             """,
             unsafe_allow_html=True,
@@ -381,13 +646,13 @@ def main() -> None:
 
     st.markdown("<div style='margin-bottom: 24px;'></div>", unsafe_allow_html=True)
 
-    # Main Navigation Tabs
+    # Main Navigation Tabs — No emojis
     tab_alerts, tab_graph, tab_evasion, tab_export, tab_pipeline = st.tabs([
-        "🚨 Investigative Alerts",
-        "🕸️ Link Analysis Graph",
-        "🔍 Evasion & Laundering Hub",
-        "📑 Case Dossier Export",
-        "⚙️ Pipeline & Ground Truth",
+        "Investigative Alerts",
+        "Link Analysis",
+        "Evasion & Laundering",
+        "Case Dossier",
+        "Pipeline & Evaluation",
     ])
 
     # TAB 1: Investigative Alerts
@@ -399,11 +664,11 @@ def main() -> None:
 
     # TAB 2: Link Analysis Graph
     with tab_graph:
-        st.markdown("#### 🎯 Interactive Link-Analysis Explorer")
+        st.markdown("#### Interactive Link-Analysis Explorer")
         st.caption("Traverse multi-hop relationships between wallets, transactions, and broadcasting IP addresses.")
         
         target_wallet = st.selectbox(
-            "Select Target Wallet for Graph Inspection:",
+            "Select Target Wallet for Graph Inspection",
             options=list(alerts_df.index) if not alerts_df.empty else [],
             index=0 if not alerts_df.empty else None,
             key="graph_target_select",
@@ -422,11 +687,11 @@ def main() -> None:
 
     # TAB 3: Evasion Hub
     with tab_evasion:
-        st.markdown("### 🔬 Evasion-Specific Forensic Detectors")
+        st.markdown("### Evasion-Specific Forensic Detectors")
         
         col_cj, col_pc = st.columns(2)
         with col_cj:
-            st.markdown("#### 🌀 CoinJoin Mixing Transactions")
+            st.markdown("#### CoinJoin Mixing Transactions")
             if not cj_df.empty:
                 cj_flagged = cj_df[cj_df["is_coinjoin"]]
                 st.dataframe(
@@ -438,7 +703,7 @@ def main() -> None:
                 st.info("No CoinJoin transactions flagged.")
 
         with col_pc:
-            st.markdown("#### 🍌 Ransomware Peel Chains")
+            st.markdown("#### Ransomware Peel Chains")
             if peel_chains:
                 pc_records = []
                 for idx, pc in enumerate(peel_chains, 1):
@@ -454,7 +719,7 @@ def main() -> None:
                 st.info("No peel chains detected.")
 
         st.markdown("---")
-        st.markdown("#### 🌐 Network Infrastructure Category Distribution")
+        st.markdown("#### Network Infrastructure Category Distribution")
         if not alerts_df.empty and "asn_category" in alerts_df.columns:
             asn_counts = alerts_df["asn_category"].value_counts().reset_index()
             asn_counts.columns = ["Category", "Count"]
@@ -464,32 +729,39 @@ def main() -> None:
                 x="Category",
                 y="Count",
                 color="Category",
-                color_discrete_sequence=["#00F29B", "#06B6D4", "#8B5CF6", "#F59E0B", "#EF4444"],
+                color_discrete_sequence=["#5B8DEF", "#8B949E", "#D29922", "#DA3633", "#3FB950"],
                 template="plotly_dark",
             )
             fig.update_layout(
-                paper_bgcolor="rgba(13, 27, 19, 0.7)",
-                plot_bgcolor="rgba(13, 27, 19, 0.7)",
-                font=dict(color="#F0FDF4"),
+                paper_bgcolor="#14181F",
+                plot_bgcolor="#14181F",
+                font=dict(color="#C9D1D9", family="Inter, sans-serif", size=12),
+                xaxis=dict(gridcolor="#21262D", linecolor="#21262D"),
+                yaxis=dict(gridcolor="#21262D", linecolor="#21262D"),
+                showlegend=False,
+                margin=dict(l=40, r=24, t=32, b=40),
+            )
+            fig.update_traces(
+                marker_line_width=0,
             )
             st.plotly_chart(fig, use_container_width=True)
 
     # TAB 4: Case Dossier Export
     with tab_export:
-        st.markdown("### 📑 Automated Forensic Case Dossier Generator")
+        st.markdown("### Automated Forensic Case Dossier Generator")
         st.caption("Generate official evidence dossiers (PDF & Markdown) summarizing on-chain and network-layer forensic links.")
 
         col_exp1, col_exp2, col_exp3 = st.columns([3, 1, 1])
         with col_exp1:
             export_target = st.selectbox(
-                "Select Subject Wallet to Generate Case Dossier:",
+                "Select Subject Wallet to Generate Case Dossier",
                 options=list(alerts_df.index) if not alerts_df.empty else [],
                 key="export_target_select",
             )
         with col_exp2:
             st.write("")
             st.write("")
-            gen_btn = st.button("📄 Generate Dossier", use_container_width=True)
+            gen_btn = st.button("Generate Dossier", use_container_width=True)
 
         if export_target and (gen_btn or "last_exported" in st.session_state):
             rep_path_md = generate_case_report(export_target, alerts_df, output_dir=root / "reports", format="md")
@@ -503,7 +775,7 @@ def main() -> None:
             bcol1, bcol2 = st.columns(2)
             with bcol1:
                 st.download_button(
-                    "⬇️ Download Case Dossier (.md)",
+                    "Download Case Dossier (.md)",
                     data=report_md,
                     file_name=rep_path_md.name,
                     mime="text/markdown",
@@ -513,21 +785,21 @@ def main() -> None:
                 if pdf_target_path.is_file():
                     with open(pdf_target_path, "rb") as pf:
                         st.download_button(
-                            "⬇️ Download Official Case Report (.pdf)",
+                            "Download Official Case Report (.pdf)",
                             data=pf.read(),
                             file_name=pdf_target_path.name,
                             mime="application/pdf",
                             use_container_width=True,
                         )
 
-            with st.expander("👁️ Preview Generated Case Dossier", expanded=True):
+            with st.expander("Preview Generated Case Dossier", expanded=True):
                 st.markdown(report_md)
 
     # TAB 5: Pipeline & Evaluation
     with tab_pipeline:
-        st.markdown("### ⚙️ Pipeline Control & Evaluation")
+        st.markdown("### Pipeline Control & Evaluation")
         
-        if st.button("🚀 Re-Run Full Analysis Pipeline"):
+        if st.button("Re-Run Full Analysis Pipeline"):
             with st.spinner("Executing end-to-end forensic analysis..."):
                 run_full_pipeline(root / "data" / "raw" / "synthetic_transactions.csv")
                 st.cache_data.clear()
@@ -536,7 +808,7 @@ def main() -> None:
 
         if not gt_df.empty and not alerts_df.empty:
             st.markdown("---")
-            st.markdown("#### 🎯 Ground Truth Benchmark Evaluation")
+            st.markdown("#### Ground Truth Benchmark Evaluation")
             gt_criminal_wallets = set(gt_df[(gt_df["entity_type"] == "wallet") & (gt_df["is_criminal"])]["entity_id"])
             flagged_wallets = set(alerts_df[alerts_df["composite_risk_score"] >= 0.40].index)
 

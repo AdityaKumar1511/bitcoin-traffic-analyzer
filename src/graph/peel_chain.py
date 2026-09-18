@@ -28,16 +28,22 @@ def is_peel_transaction(
     peel_ratio_threshold: float = 0.15,
 ) -> bool:
     """
-    Check if a transaction exhibits a peel structure (exactly 2 outputs with one small peel).
+    Check if a transaction exhibits a peel structure.
+
+    Accepts transactions with 2 or more outputs where one dominant output
+    carries the majority of value (the non-dominant outputs' share of total
+    value is <= peel_ratio_threshold). This handles:
+    - Classic 2-output peels (large carrier + small peel-off)
+    - 3+ output transactions with a dominant carrier and small fee-change/peel outputs
 
     Args:
         df_row_or_amounts: A list of output amounts, a dictionary representing a row,
             or an object with an 'output_amounts' attribute.
-        peel_ratio_threshold: Maximum ratio of the smaller output to total output
+        peel_ratio_threshold: Maximum ratio of non-dominant outputs to total output
             value (default: 0.15).
 
     Returns:
-        bool: True if transaction has 2 outputs and smaller / total <= threshold.
+        bool: True if transaction has 2+ outputs and non-carrier / total <= threshold.
     """
     if isinstance(df_row_or_amounts, (list, tuple)):
         out_amts = df_row_or_amounts
@@ -48,21 +54,23 @@ def is_peel_transaction(
     else:
         return False
 
-    if not isinstance(out_amts, (list, tuple)) or len(out_amts) != 2:
+    if not isinstance(out_amts, (list, tuple)) or len(out_amts) < 2:
         return False
 
-    try:
-        a1 = float(out_amts[0])
-        a2 = float(out_amts[1])
-    except (ValueError, TypeError):
-        return False
+    float_amts: List[float] = []
+    for a in out_amts:
+        try:
+            float_amts.append(float(a))
+        except (ValueError, TypeError):
+            return False
 
-    total = a1 + a2
+    total = sum(float_amts)
     if total <= 0:
         return False
 
-    smaller = min(a1, a2)
-    ratio = smaller / total
+    largest = max(float_amts)
+    non_carrier_total = total - largest
+    ratio = non_carrier_total / total
     return ratio <= peel_ratio_threshold
 
 
@@ -113,21 +121,30 @@ def detect_peel_chains(
         if not is_peel_transaction(out_amts, peel_ratio_threshold=peel_ratio_threshold):
             continue
 
-        if len(out_addrs) != 2 or len(out_amts) != 2:
+        # Require at least 2 outputs and matching address/amount counts
+        if len(out_addrs) < 2 or len(out_amts) < 2 or len(out_addrs) != len(out_amts):
             continue
 
         clean_txid = str(txid).strip()
-        addr1, addr2 = str(out_addrs[0]).strip(), str(out_addrs[1]).strip()
-        amt1, amt2 = float(out_amts[0]), float(out_amts[1])
-        total_amt = round(amt1 + amt2, 8)
 
-        # Distinguish carrier (large) vs peeled (small)
-        if amt1 >= amt2:
-            carrier_addr, carrier_amt = addr1, amt1
-            peel_addr, peel_amt = addr2, amt2
-        else:
-            carrier_addr, carrier_amt = addr2, amt2
-            peel_addr, peel_amt = addr1, amt1
+        # Parse all outputs and identify carrier (largest) vs peel (rest)
+        parsed_outputs: List[Tuple[str, float]] = []
+        for addr, amt in zip(out_addrs, out_amts):
+            try:
+                parsed_outputs.append((str(addr).strip(), float(amt)))
+            except (ValueError, TypeError):
+                continue
+
+        if len(parsed_outputs) < 2:
+            continue
+
+        # Sort by amount descending; carrier is the largest output
+        parsed_outputs.sort(key=lambda x: x[1], reverse=True)
+        carrier_addr, carrier_amt = parsed_outputs[0]
+        peel_amt = round(sum(a for _, a in parsed_outputs[1:]), 8)
+        total_amt = round(carrier_amt + peel_amt, 8)
+        # For display, record the first (largest) peel-off wallet
+        peel_addr = parsed_outputs[1][0] if len(parsed_outputs) > 1 else ""
 
         step_info = {
             "txid": clean_txid,
@@ -203,6 +220,38 @@ def detect_peel_chains(
         ending_amount = round(last_step["carrier_amt"], 8)
         total_peeled = round(sum(tx_lookup[t]["peel_amt"] for t in chain_txids), 8)
 
+        # Detect collector pattern: check if the chain's starting wallet has
+        # high fan-in (many distinct source wallets feeding it), indicating a
+        # ransomware collector or aggregation point.
+        start_wallet = chain_wallets[0]
+        feeder_wallets: Set[str] = set()
+        feeder_txids: Set[str] = set()
+
+        for row in df.itertuples(index=True):
+            row_out_addrs = getattr(row, "output_addresses", [])
+            row_in_addrs = getattr(row, "input_addresses", [])
+            row_txid = getattr(row, "txid", None)
+
+            if not isinstance(row_out_addrs, (list, tuple)):
+                continue
+
+            clean_outs = [str(a).strip() for a in row_out_addrs if a]
+            if start_wallet not in clean_outs:
+                continue
+
+            # This transaction sends TO the chain start wallet
+            row_txid_str = str(row_txid).strip() if row_txid else ""
+            if row_txid_str and row_txid_str not in chain_txids:
+                feeder_txids.add(row_txid_str)
+
+            if isinstance(row_in_addrs, (list, tuple)):
+                for a in row_in_addrs:
+                    clean_a = str(a).strip() if a else ""
+                    if clean_a and clean_a != start_wallet:
+                        feeder_wallets.add(clean_a)
+
+        is_collector = len(feeder_wallets) >= 3
+
         final_chains.append({
             "chain_wallets": chain_wallets,
             "chain_txids": chain_txids,
@@ -210,6 +259,9 @@ def detect_peel_chains(
             "starting_amount": starting_amount,
             "ending_amount": ending_amount,
             "total_peeled": total_peeled,
+            "collector_wallet": start_wallet if is_collector else None,
+            "feeder_wallets": sorted(feeder_wallets),
+            "feeder_txids": sorted(feeder_txids),
         })
 
         claimed_wallets.update(chain_wallets)

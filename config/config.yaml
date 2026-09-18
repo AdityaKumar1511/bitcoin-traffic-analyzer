@@ -12,7 +12,7 @@ evasion_detectors:
     min_outputs: 5
     amount_similarity_threshold: 0.05
   peel_chain:
-    min_chain_length: 3
+    min_chain_length: 1
     peel_ratio_threshold: 0.15
   mixer:
     time_window_minutes: 60
