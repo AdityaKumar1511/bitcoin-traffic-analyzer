@@ -265,9 +265,14 @@ class TestPeelChainDetection(unittest.TestCase):
         # Balanced split: 5.0 and 5.0 (ratio = 0.5 > 0.15) -> False
         self.assertFalse(is_peel_transaction([5.0, 5.0]))
 
-        # Invalid lengths
+        # Invalid lengths (less than 2 outputs)
+        self.assertFalse(is_peel_transaction([]))
         self.assertFalse(is_peel_transaction([10.0]))
-        self.assertFalse(is_peel_transaction([10.0, 1.0, 0.5]))
+
+        # Multi-output peel: dominant carrier with small peels
+        self.assertTrue(is_peel_transaction([10.0, 1.0, 0.5]))
+        # Multi-output non-peel: non-carrier ratio exceeds threshold
+        self.assertFalse(is_peel_transaction([10.0, 3.0, 2.0]))
 
     def test_detect_peel_chains(self) -> None:
         # Create a synthetic 3-hop peel chain: w0 -> w1 -> w2 -> w3

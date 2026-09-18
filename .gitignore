@@ -14,4 +14,7 @@ data/processed/*
 reports/*
 !reports/.gitkeep
 
-
+# Plans and design docs
+*implementation_plan.md
+*implemenataion_plan.md
+implementation*.md
