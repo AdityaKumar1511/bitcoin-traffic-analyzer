@@ -8,6 +8,7 @@ from __future__ import annotations
 import json
 from pathlib import Path
 import sys
+import yaml
 
 # Ensure repository root is in Python module search path
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
@@ -646,27 +647,110 @@ def main() -> None:
 
     st.markdown("<div style='margin-bottom: 24px;'></div>", unsafe_allow_html=True)
 
-    # Main Navigation Tabs — No emojis
-    tab_alerts, tab_graph, tab_evasion, tab_export, tab_pipeline = st.tabs([
+    # Main Navigation Tabs — Phase 5 Complete Forensic Dashboard
+    (
+        tab_overview,
+        tab_alerts,
+        tab_graph,
+        tab_geo_asn,
+        tab_evasion,
+        tab_export,
+        tab_pipeline,
+    ) = st.tabs([
+        "Executive Overview",
         "Investigative Alerts",
         "Link Analysis",
+        "Geo & ASN Intelligence",
         "Evasion & Laundering",
         "Case Dossier",
         "Pipeline & Evaluation",
     ])
 
-    # TAB 1: Investigative Alerts
+    # TAB 1: Executive Overview
+    with tab_overview:
+        st.markdown("### Forensic Risk & Traffic Profile Overview")
+        st.caption("Distribution of composite risk scores across evaluated entities, anomaly severity, and top prioritized threats.")
+
+        if not alerts_df.empty and "composite_risk_score" in alerts_df.columns:
+            ov_col1, ov_col2 = st.columns([3, 2])
+
+            with ov_col1:
+                st.markdown("#### Composite Risk Score Distribution")
+                # Histogram with severity thresholds
+                fig_hist = px.histogram(
+                    alerts_df,
+                    x="composite_risk_score",
+                    nbins=40,
+                    color_discrete_sequence=["#5B8DEF"],
+                    labels={"composite_risk_score": "Composite Risk Score (0.0 - 1.0)", "count": "Wallet Count"},
+                    template="plotly_dark",
+                )
+                fig_hist.update_layout(
+                    paper_bgcolor="#14181F",
+                    plot_bgcolor="#14181F",
+                    font=dict(color="#C9D1D9", family="Inter, sans-serif", size=11),
+                    xaxis=dict(gridcolor="#21262D", linecolor="#21262D"),
+                    yaxis=dict(gridcolor="#21262D", linecolor="#21262D"),
+                    margin=dict(l=30, r=20, t=30, b=30),
+                    height=280,
+                )
+                # Add threshold line markers
+                fig_hist.add_vline(x=0.75, line_dash="dash", line_color="#DA3633", annotation_text="CRITICAL (≥0.75)", annotation_font_size=10, annotation_font_color="#DA3633")
+                fig_hist.add_vline(x=0.50, line_dash="dash", line_color="#D29922", annotation_text="HIGH (≥0.50)", annotation_font_size=10, annotation_font_color="#D29922")
+                fig_hist.add_vline(x=0.30, line_dash="dash", line_color="#8B949E", annotation_text="MEDIUM (≥0.30)", annotation_font_size=10, annotation_font_color="#8B949E")
+                st.plotly_chart(fig_hist, use_container_width=True)
+
+            with ov_col2:
+                st.markdown("#### Entity Risk Level Breakdown")
+                if "risk_level" in alerts_df.columns:
+                    tier_counts = alerts_df["risk_level"].value_counts().reset_index()
+                    tier_counts.columns = ["Tier", "Count"]
+                    color_map = {
+                        "CRITICAL": "#DA3633",
+                        "HIGH": "#D29922",
+                        "MEDIUM": "#8B949E",
+                        "LOW": "#3FB950",
+                    }
+                    fig_donut = px.pie(
+                        tier_counts,
+                        names="Tier",
+                        values="Count",
+                        hole=0.6,
+                        color="Tier",
+                        color_discrete_map=color_map,
+                        template="plotly_dark",
+                    )
+                    fig_donut.update_layout(
+                        paper_bgcolor="#14181F",
+                        plot_bgcolor="#14181F",
+                        font=dict(color="#C9D1D9", family="Inter, sans-serif", size=11),
+                        showlegend=True,
+                        legend=dict(orientation="h", yanchor="bottom", y=-0.15, xanchor="center", x=0.5),
+                        margin=dict(l=20, r=20, t=30, b=30),
+                        height=280,
+                    )
+                    st.plotly_chart(fig_donut, use_container_width=True)
+
+            st.markdown("---")
+            st.markdown("#### High-Priority Threat Entities Leaderboard")
+            top_leads = alerts_df.sort_values(by="composite_risk_score", ascending=False).head(10)
+            leaderboard_cols = [c for c in ["composite_risk_score", "risk_level", "primary_ip", "asn_category", "cluster_size", "taint_hops", "primary_reason"] if c in top_leads.columns]
+            st.dataframe(top_leads[leaderboard_cols], use_container_width=True, height=260)
+        else:
+            st.info("Run the analysis pipeline to generate overview analytics.")
+
+    # TAB 2: Investigative Alerts & SHAP Detail
     with tab_alerts:
         selected_wallet = render_alert_table(alerts_df)
         if selected_wallet:
             st.markdown("<div style='margin-top: 16px;'></div>", unsafe_allow_html=True)
             render_detail_view(selected_wallet, alerts_df, feedback_store=fb_store)
 
-    # TAB 2: Link Analysis Graph
+    # TAB 3: Link Analysis Graph
     with tab_graph:
         st.markdown("#### Interactive Link-Analysis Explorer")
         st.caption("Traverse multi-hop relationships between wallets, transactions, and broadcasting IP addresses.")
-        
+
         target_wallet = st.selectbox(
             "Select Target Wallet for Graph Inspection",
             options=list(alerts_df.index) if not alerts_df.empty else [],
@@ -685,10 +769,99 @@ def main() -> None:
         else:
             st.info("Please load transaction data to render graph.")
 
-    # TAB 3: Evasion Hub
+    # TAB 4: Geo & ASN Intelligence
+    with tab_geo_asn:
+        st.markdown("### Network & Geographic Infrastructure Intelligence")
+        st.caption("Correlating broadcast IP addresses with autonomous systems (ASNs), bulletproof hosters, and anonymization services.")
+
+        col_geo1, col_geo2 = st.columns([3, 2])
+
+        with col_geo1:
+            st.markdown("#### Network Infrastructure Category Distribution")
+            if not alerts_df.empty and "asn_category" in alerts_df.columns:
+                asn_counts = alerts_df["asn_category"].value_counts().reset_index()
+                asn_counts.columns = ["Category", "Count"]
+
+                fig_asn = px.bar(
+                    asn_counts,
+                    x="Category",
+                    y="Count",
+                    color="Category",
+                    color_discrete_sequence=["#5B8DEF", "#8B949E", "#D29922", "#DA3633", "#3FB950"],
+                    template="plotly_dark",
+                )
+                fig_asn.update_layout(
+                    paper_bgcolor="#14181F",
+                    plot_bgcolor="#14181F",
+                    font=dict(color="#C9D1D9", family="Inter, sans-serif", size=12),
+                    xaxis=dict(gridcolor="#21262D", linecolor="#21262D"),
+                    yaxis=dict(gridcolor="#21262D", linecolor="#21262D"),
+                    showlegend=False,
+                    margin=dict(l=40, r=24, t=32, b=40),
+                    height=280,
+                )
+                fig_asn.update_traces(marker_line_width=0)
+                st.plotly_chart(fig_asn, use_container_width=True)
+            else:
+                st.info("No ASN category data available.")
+
+        with col_geo2:
+            st.markdown("#### High-Risk ASN Threat Intelligence")
+            high_risk_yaml = root / "config" / "high_risk_asns.yaml"
+            high_risk_data = {}
+            if high_risk_yaml.is_file():
+                try:
+                    with open(high_risk_yaml, "r", encoding="utf-8") as yf:
+                        high_risk_data = yaml.safe_load(yf) or {}
+                except Exception:
+                    pass
+
+            bp_count = len(high_risk_data.get("bulletproof_hosting", []))
+            vpn_count = len(high_risk_data.get("vpn_proxy", []))
+            tor_count = len(high_risk_data.get("tor_related", []))
+            priv_count = len(high_risk_data.get("privacy_focused", []))
+
+            st.markdown(
+                f"""
+                <div style="background: #14181F; border: 1px solid #21262D; border-radius: 8px; padding: 16px;">
+                    <div style="margin-bottom: 8px; font-size: 13px; color: #C9D1D9;"><b>Monitored Autonomous Systems:</b></div>
+                    <div style="font-size: 12px; color: #8B949E; line-height: 1.8;">
+                        • Bulletproof Hosting Providers: <b style="color: #DA3633;">{bp_count} ASNs</b><br>
+                        • Commercial VPN / Proxy Relays: <b style="color: #D29922;">{vpn_count} ASNs</b><br>
+                        • Tor Exit / Relay Operators: <b style="color: #8B949E;">{tor_count} ASNs</b><br>
+                        • Privacy Jurisdiction Providers: <b style="color: #5B8DEF;">{priv_count} ASNs</b>
+                    </div>
+                </div>
+                """,
+                unsafe_allow_html=True,
+            )
+
+        st.markdown("---")
+        st.markdown("#### Top Broadcasting IP Addresses by Wallet Cluster Co-Occurrence")
+        if not alerts_df.empty and "primary_ip" in alerts_df.columns:
+            valid_ips = alerts_df[alerts_df["primary_ip"].notna() & (alerts_df["primary_ip"] != "nan")]
+            if not valid_ips.empty:
+                ip_stats = (
+                    valid_ips.groupby("primary_ip")
+                    .agg(
+                        wallets_count=("primary_ip", "count"),
+                        max_risk=("composite_risk_score", "max"),
+                        asn=("primary_asn", "first"),
+                        category=("asn_category", "first"),
+                    )
+                    .reset_index()
+                    .sort_values(by="wallets_count", ascending=False)
+                    .head(15)
+                )
+                ip_stats.columns = ["Broadcasting IP", "Associated Wallets", "Max Risk Score", "ASN", "Infrastructure Category"]
+                st.dataframe(ip_stats, use_container_width=True, height=240)
+            else:
+                st.info("No IP telemetry recorded.")
+
+    # TAB 5: Evasion Hub
     with tab_evasion:
         st.markdown("### Evasion-Specific Forensic Detectors")
-        
+
         col_cj, col_pc = st.columns(2)
         with col_cj:
             st.markdown("#### CoinJoin Mixing Transactions")
@@ -713,40 +886,13 @@ def main() -> None:
                         "Start (BTC)": pc.get("starting_amount", 0.0),
                         "Peeled (BTC)": pc.get("total_peeled", 0.0),
                         "Wallets": len(pc.get("chain_wallets", [])),
+                        "Collector Wallet": pc.get("collector_wallet", "N/A"),
                     })
                 st.dataframe(pd.DataFrame(pc_records), use_container_width=True, height=240)
             else:
                 st.info("No peel chains detected.")
 
-        st.markdown("---")
-        st.markdown("#### Network Infrastructure Category Distribution")
-        if not alerts_df.empty and "asn_category" in alerts_df.columns:
-            asn_counts = alerts_df["asn_category"].value_counts().reset_index()
-            asn_counts.columns = ["Category", "Count"]
-            
-            fig = px.bar(
-                asn_counts,
-                x="Category",
-                y="Count",
-                color="Category",
-                color_discrete_sequence=["#5B8DEF", "#8B949E", "#D29922", "#DA3633", "#3FB950"],
-                template="plotly_dark",
-            )
-            fig.update_layout(
-                paper_bgcolor="#14181F",
-                plot_bgcolor="#14181F",
-                font=dict(color="#C9D1D9", family="Inter, sans-serif", size=12),
-                xaxis=dict(gridcolor="#21262D", linecolor="#21262D"),
-                yaxis=dict(gridcolor="#21262D", linecolor="#21262D"),
-                showlegend=False,
-                margin=dict(l=40, r=24, t=32, b=40),
-            )
-            fig.update_traces(
-                marker_line_width=0,
-            )
-            st.plotly_chart(fig, use_container_width=True)
-
-    # TAB 4: Case Dossier Export
+    # TAB 6: Case Dossier Export
     with tab_export:
         st.markdown("### Automated Forensic Case Dossier Generator")
         st.caption("Generate official evidence dossiers (PDF & Markdown) summarizing on-chain and network-layer forensic links.")
@@ -795,10 +941,10 @@ def main() -> None:
             with st.expander("Preview Generated Case Dossier", expanded=True):
                 st.markdown(report_md)
 
-    # TAB 5: Pipeline & Evaluation
+    # TAB 7: Pipeline & Evaluation
     with tab_pipeline:
         st.markdown("### Pipeline Control & Evaluation")
-        
+
         if st.button("Re-Run Full Analysis Pipeline"):
             with st.spinner("Executing end-to-end forensic analysis..."):
                 run_full_pipeline(root / "data" / "raw" / "synthetic_transactions.csv")
@@ -810,7 +956,7 @@ def main() -> None:
             st.markdown("---")
             st.markdown("#### Ground Truth Benchmark Evaluation")
             gt_criminal_wallets = set(gt_df[(gt_df["entity_type"] == "wallet") & (gt_df["is_criminal"])]["entity_id"])
-            flagged_wallets = set(alerts_df[alerts_df["composite_risk_score"] >= 0.40].index)
+            flagged_wallets = set(alerts_df[alerts_df["composite_risk_score"] >= 0.30].index)
 
             true_pos = len(flagged_wallets.intersection(gt_criminal_wallets))
             precision = true_pos / len(flagged_wallets) if flagged_wallets else 0.0

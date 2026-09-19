@@ -1,14 +1,64 @@
 """
 Detail View Component for Streamlit Dashboard — Enterprise Forensic Theme.
+Includes SHAP-backed explainability charts, entity metadata, taint paths, and analyst triage feedback.
 """
 
 from __future__ import annotations
 
-from typing import Any, Dict, Optional
+import ast
+from typing import Any, Dict, List, Optional, Union
 import pandas as pd
+import plotly.graph_objects as go
 import streamlit as st
 
 from src.feedback.feedback_store import FeedbackStore
+
+
+FEATURE_HUMAN_LABELS: Dict[str, str] = {
+    "fan_in_ratio": "Fan-In Aggregation Ratio",
+    "fan_out_ratio": "Fan-Out Dispersion Ratio",
+    "in_degree": "In-Degree (Counterparties In)",
+    "out_degree": "Out-Degree (Counterparties Out)",
+    "total_btc_in": "Total BTC Inflow",
+    "total_btc_out": "Total BTC Outflow",
+    "net_flow": "Net BTC Flow",
+    "tx_count": "Total Transaction Count",
+    "avg_tx_amount": "Average Transaction Amount",
+    "std_tx_amount": "Transaction Amount Volatility",
+    "distinct_ip_count": "Distinct IP Addresses",
+    "distinct_country_count": "Distinct Broadcast Countries",
+    "distinct_asn_count": "Distinct Autonomous Systems (ASNs)",
+    "cluster_size": "Wallet Cluster Size",
+    "is_peel_carrier": "Peel-Chain Carrier Participation",
+    "peel_step_count": "Peel-Chain Hop Count",
+    "wallet_address_lifespan_hours": "Wallet Lifespan (Hours)",
+    "wallet_hour_entropy": "Temporal Broadcast Entropy",
+    "wallet_burstiness": "Broadcast Burstiness Coefficient",
+    "wallet_tx_velocity_per_hour": "Hourly Transaction Velocity",
+    "wallet_night_tx_ratio": "Night-Time Broadcast Ratio",
+    "wallet_weekend_tx_ratio": "Weekend Broadcast Ratio",
+    "wallet_mean_burst_interval": "Mean Inter-Transaction Interval",
+    "wallet_min_burst_interval": "Minimum Inter-Transaction Interval",
+    "ip_wallet_diversity": "IP Shared-Wallet Diversity",
+    "timing_tightness": "Temporal Co-Occurrence Tightness",
+    "asn_risk_score": "High-Risk ASN Score",
+    "geo_risk_score": "High-Risk Country Score",
+    "co_occurrence_count": "Network Co-Occurrence Frequency",
+}
+
+
+def _parse_shap_features(shap_raw: Any) -> Dict[str, float]:
+    """Safely parse SHAP feature dictionary from dataframe row."""
+    if isinstance(shap_raw, dict):
+        return {str(k): float(v) for k, v in shap_raw.items()}
+    if isinstance(shap_raw, str) and shap_raw.strip():
+        try:
+            parsed = ast.literal_eval(shap_raw)
+            if isinstance(parsed, dict):
+                return {str(k): float(v) for k, v in parsed.items()}
+        except (ValueError, SyntaxError):
+            pass
+    return {}
 
 
 def render_detail_view(
@@ -18,6 +68,7 @@ def render_detail_view(
 ) -> None:
     """
     Render comprehensive forensic deep-dive view for a selected wallet.
+    Includes KPI metrics, SHAP feature attributions, provenance trails, and analyst feedback.
     """
     if entity_id not in alerts_df.index:
         st.error(f"Entity '{entity_id}' not found in alerts database.")
@@ -125,7 +176,47 @@ def render_detail_view(
             unsafe_allow_html=True,
         )
 
-    st.markdown("<div style='margin-top: 24px;'></div>", unsafe_allow_html=True)
+    st.markdown("<div style='margin-top: 20px;'></div>", unsafe_allow_html=True)
+
+    # SHAP Explainability Waterfall/Bar Section
+    shap_features = _parse_shap_features(row.get("top_shap_features"))
+    if shap_features:
+        st.markdown("#### SHAP Feature Attribution — Why the Model Flagged This Entity")
+        st.caption("Quantifies the exact behavioral, graph, and network features that contributed to this anomaly score.")
+
+        # Prepare data for plotting
+        sorted_shap = sorted(shap_features.items(), key=lambda x: abs(x[1]), reverse=True)[:8]
+        feat_keys = [k for k, _ in sorted_shap][::-1]
+        feat_vals = [v for _, v in sorted_shap][::-1]
+        feat_display = [FEATURE_HUMAN_LABELS.get(k, k.replace("_", " ").title()) for k in feat_keys]
+        bar_colors = ["#DA3633" if v > 0 else "#5B8DEF" for v in feat_vals]
+
+        fig_shap = go.Figure(
+            go.Bar(
+                x=feat_vals,
+                y=feat_display,
+                orientation="h",
+                marker=dict(color=bar_colors, line=dict(width=0)),
+                text=[f"{v:+.3f}" for v in feat_vals],
+                textposition="outside",
+            )
+        )
+        fig_shap.update_layout(
+            paper_bgcolor="#14181F",
+            plot_bgcolor="#14181F",
+            font=dict(color="#C9D1D9", family="Inter, sans-serif", size=11),
+            xaxis=dict(
+                gridcolor="#21262D",
+                linecolor="#21262D",
+                title="SHAP Attribution Value (Signed Feature Contribution)",
+                zerolinecolor="#30363D",
+            ),
+            yaxis=dict(gridcolor="#21262D", linecolor="#21262D"),
+            margin=dict(l=20, r=40, t=20, b=30),
+            height=260,
+        )
+        st.plotly_chart(fig_shap, use_container_width=True)
+        st.markdown("<div style='margin-top: 12px;'></div>", unsafe_allow_html=True)
 
     # Forensic Breakdown
     col_left, col_right = st.columns([3, 2])
@@ -142,20 +233,36 @@ def render_detail_view(
 
         # Associated Transactions
         txids = row.get("associated_txids", [])
+        if isinstance(txids, str):
+            try:
+                txids = ast.literal_eval(txids)
+            except (ValueError, SyntaxError):
+                txids = [txids]
         if isinstance(txids, list) and txids:
             st.markdown(f"#### Associated Transactions ({len(txids)})")
-            st.dataframe(pd.DataFrame({"TXID": txids}), use_container_width=True, height=150)
+            st.dataframe(pd.DataFrame({"TXID": txids}), use_container_width=True, height=130)
+
+        # Related Wallets in Co-Cluster
+        rel_wallets = row.get("related_wallets", [])
+        if isinstance(rel_wallets, str):
+            try:
+                rel_wallets = ast.literal_eval(rel_wallets)
+            except (ValueError, SyntaxError):
+                rel_wallets = []
+        if isinstance(rel_wallets, list) and rel_wallets:
+            st.markdown(f"#### Co-Cluster Counterparties ({len(rel_wallets)})")
+            st.dataframe(pd.DataFrame({"Related Address": rel_wallets}), use_container_width=True, height=120)
 
     with col_right:
         st.markdown("#### Network & Entity Metadata")
         meta_data = {
-            "Broadcasting IP": row.get("primary_ip", "N/A"),
-            "ASN": row.get("primary_asn", "N/A"),
-            "ASN Category": row.get("asn_category", "N/A"),
-            "Entity Cluster ID": row.get("cluster_id", "Singleton"),
-            "Cluster Size (Wallets)": row.get("cluster_size", 1),
-            "Taint Seed Source": row.get("taint_source", "None"),
-            "Taint Hop Distance": row.get("taint_hops", 0),
+            "Broadcasting IP": str(row.get("primary_ip", "N/A")),
+            "ASN": str(row.get("primary_asn", "N/A")),
+            "ASN Category": str(row.get("asn_category", "N/A")),
+            "Entity Cluster ID": str(row.get("cluster_id", "Singleton")),
+            "Cluster Size (Wallets)": int(row.get("cluster_size", 1)),
+            "Taint Seed Source": str(row.get("taint_source", "None")),
+            "Taint Hop Distance": int(row.get("taint_hops", 0)),
         }
         st.table(pd.Series(meta_data, name="Value"))
 
@@ -172,7 +279,7 @@ def render_detail_view(
                 if current_status in ["PENDING", "CONFIRMED", "FALSE_POSITIVE"]
                 else 0,
             )
-            new_notes = st.text_area("Analyst Notes:", value=current_notes, height=80)
+            new_notes = st.text_area("Analyst Notes:", value=current_notes, height=70)
             submitted = st.form_submit_button("Save & Recalibrate")
 
             if submitted and feedback_store:
