@@ -8,10 +8,11 @@ to support alert triaging and recalibration of composite risk scores.
 from __future__ import annotations
 
 from datetime import datetime, timezone
-import json
 from pathlib import Path
 import sqlite3
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any, Dict, Optional, Union
+
+import pandas as pd
 
 from src.utils.logging_config import get_logger
 from src.utils.paths import get_project_root
@@ -169,5 +170,3 @@ class FeedbackStore:
 
         logger.info("Recalibrated risk scores for %d reviewed entities.", len(feedback_map))
         return recalibrated.sort_values(by="composite_risk_score", ascending=False)
-
-

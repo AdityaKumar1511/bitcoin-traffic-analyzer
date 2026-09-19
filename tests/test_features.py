@@ -77,7 +77,7 @@ class TestFeatureEngineering(unittest.TestCase):
         self.assertIsInstance(wf, pd.DataFrame)
         self.assertIn("addrA", wf.index)
         self.assertIn("addrC", wf.index)
-        
+
         # Check expected columns
         expected_cols = [
             "in_degree", "out_degree", "tx_count", "total_btc_in", "total_btc_out",
@@ -142,7 +142,7 @@ class TestFeatureEngineering(unittest.TestCase):
         temp = compute_temporal_features(self.graph, self.df)
         self.assertIsInstance(temp, pd.DataFrame)
         self.assertIn("addrC", temp.index)
-        
+
         # Check expected temporal columns
         for col in ["hour_entropy", "day_of_week_entropy", "burstiness", "mean_inter_tx_seconds"]:
             self.assertIn(col, temp.columns)

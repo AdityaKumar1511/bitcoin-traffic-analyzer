@@ -11,7 +11,7 @@ from __future__ import annotations
 import argparse
 from collections import defaultdict
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Set, Tuple, Union
+from typing import Any, Dict, List, Set, Tuple, Union
 
 import networkx as nx
 import pandas as pd

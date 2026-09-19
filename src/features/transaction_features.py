@@ -11,14 +11,14 @@ import argparse
 import pandas as pd
 import numpy as np
 import networkx as nx
-from typing import Dict, Any, List, Set
-from pathlib import Path
+from typing import Dict, Any, Set
 
 from src.utils.logging_config import get_logger
-from src.graph.builder import get_nodes_by_type, build_graph
+from src.graph.builder import build_graph
 from src.ingestion.parser import parse_file
 
 logger = get_logger(__name__)
+
 
 def load_high_risk_asns(config_path: str = "config/high_risk_asns.yaml") -> Set[str]:
     """
@@ -48,6 +48,7 @@ def load_high_risk_asns(config_path: str = "config/high_risk_asns.yaml") -> Set[
         logger.warning(f"Failed to load high-risk ASNs from {config_path}: {e}")
     return set()
 
+
 def compute_transaction_features(graph: nx.MultiDiGraph, df: pd.DataFrame) -> pd.DataFrame:
     """
     Compute transaction-level features for every transaction in the dataset.
@@ -60,9 +61,9 @@ def compute_transaction_features(graph: nx.MultiDiGraph, df: pd.DataFrame) -> pd
         pd.DataFrame: A dataframe containing the computed features indexed by txid.
     """
     logger.info("Computing transaction features...")
-    
+
     high_risk_asns = load_high_risk_asns()
-    
+
     # Try to import get_wallet_clusters, fallback to dummy if not available
     try:
         from src.graph.heuristics import get_wallet_clusters
@@ -72,7 +73,7 @@ def compute_transaction_features(graph: nx.MultiDiGraph, df: pd.DataFrame) -> pd
         wallet_clusters = {}
 
     features_list = []
-    
+
     # Pre-calculate ip to wallet clusters mapping for broadcasting_ip_wallet_diversity
     ip_to_clusters: Dict[str, Set[Any]] = {}
     for node, data in graph.nodes(data=True):
@@ -97,60 +98,60 @@ def compute_transaction_features(graph: nx.MultiDiGraph, df: pd.DataFrame) -> pd
             inputs = [addr.strip() for addr in inputs.split(";") if addr.strip()]
         for addr in inputs:
             address_counts[addr] = address_counts.get(addr, 0) + 1
-            
+
     for idx, row in df.iterrows():
         txid = row.get("txid")
-        
+
         # Parse inputs
         inputs = row.get("input_addresses", [])
         if isinstance(inputs, str):
             inputs = [addr.strip() for addr in inputs.split(";") if addr.strip()]
-            
+
         # Parse outputs
         outputs = row.get("output_addresses", [])
         if isinstance(outputs, str):
             outputs = [addr.strip() for addr in outputs.split(";") if addr.strip()]
-            
+
         # Parse amounts
         input_amounts = row.get("input_amounts", [])
         if isinstance(input_amounts, str):
             input_amounts = [float(a) for a in input_amounts.split(";") if a.strip()]
-            
+
         output_amounts = row.get("output_amounts", [])
         if isinstance(output_amounts, str):
             output_amounts = [float(a) for a in output_amounts.split(";") if a.strip()]
-            
+
         num_inputs = len(inputs)
         num_outputs = len(outputs)
         total_input_value = sum(input_amounts) if input_amounts else 0.0
         total_output_value = sum(output_amounts) if output_amounts else 0.0
-        
+
         fee = float(row.get("fee", 0.0))
         if pd.isna(fee):
             fee = 0.0
-            
+
         fee_ratio = fee / total_input_value if total_input_value > 0 else 0.0
-        
+
         avg_input_amount = np.mean(input_amounts) if input_amounts else 0.0
         avg_output_amount = np.mean(output_amounts) if output_amounts else 0.0
         max_output_amount = np.max(output_amounts) if output_amounts else 0.0
         min_output_amount = np.min(output_amounts) if output_amounts else 0.0
         output_amount_std = np.std(output_amounts) if len(output_amounts) > 1 else 0.0
         output_amount_range = max_output_amount - min_output_amount
-        
+
         input_output_ratio = num_inputs / num_outputs if num_outputs > 0 else 0.0
-        
+
         script_type = str(row.get("script_type", "")).upper()
         is_script_p2pkh = 1 if "P2PKH" in script_type else 0
         is_script_p2sh = 1 if "P2SH" in script_type else 0
         is_script_p2wpkh = 1 if "P2WPKH" in script_type else 0
         is_script_multisig = 1 if "MULTISIG" in script_type else 0
-        
+
         # Graph-derived features
         broadcast_ip_is_high_risk_asn = 0
         has_change_output = 0
         broadcasting_ip_wallet_diversity = 0
-        
+
         if graph.has_node(txid):
             for u, v, k, data in graph.out_edges(txid, data=True, keys=True):
                 target_node = graph.nodes[v]
@@ -158,10 +159,10 @@ def compute_transaction_features(graph: nx.MultiDiGraph, df: pd.DataFrame) -> pd
                     asn = str(target_node.get("asn", ""))
                     if asn in high_risk_asns:
                         broadcast_ip_is_high_risk_asn = 1
-                    
+
                     broadcasting_ip_wallet_diversity = len(ip_to_clusters.get(v, set()))
                 elif target_node.get("node_type") == "wallet":
-                    if data.get("likely_change_address") == True:
+                    if data.get("likely_change_address") is True:
                         has_change_output = 1
 
         # Temporal features
@@ -178,10 +179,10 @@ def compute_transaction_features(graph: nx.MultiDiGraph, df: pd.DataFrame) -> pd
         # Format to 8 decimals to avoid float precision issues, then check
         rounded_2 = round(total_output_value, 2)
         is_round_total = 1 if abs(total_output_value - rounded_2) < 1e-8 else 0
-        
+
         # input_address_reuse_max
         input_address_reuse_max = max((address_counts.get(addr, 0) for addr in inputs), default=0)
-        
+
         features_list.append({
             "txid": txid,
             "num_inputs": num_inputs,
@@ -209,14 +210,15 @@ def compute_transaction_features(graph: nx.MultiDiGraph, df: pd.DataFrame) -> pd
             "broadcasting_ip_wallet_diversity": broadcasting_ip_wallet_diversity,
             "input_address_reuse_max": input_address_reuse_max
         })
-        
+
     features_df = pd.DataFrame(features_list)
     if not features_df.empty:
         features_df = features_df.set_index("txid")
-        
+
     features_df = features_df.fillna(0.0)
     logger.info(f"Computed features for {len(features_df)} transactions.")
     return features_df
+
 
 def main() -> None:
     """CLI entry point for standalone testing."""
@@ -227,9 +229,10 @@ def main() -> None:
     df = parse_file(args.data)
     graph = build_graph(df)
     features_df = compute_transaction_features(graph, df)
-    
+
     print(features_df.head())
     print(f"Total shape: {features_df.shape}")
+
 
 if __name__ == "__main__":
     main()

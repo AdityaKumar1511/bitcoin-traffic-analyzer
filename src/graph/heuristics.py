@@ -19,12 +19,12 @@ import argparse
 from collections import Counter
 import itertools
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Set, Tuple, Union
+from typing import Any, Dict, List, Set
 
 import networkx as nx
 import pandas as pd
 
-from src.graph.builder import build_graph, get_nodes_by_type
+from src.graph.builder import build_graph
 from src.ingestion.parser import parse_file
 from src.utils.logging_config import get_logger
 

@@ -1,5 +1,5 @@
 # 1. Create a free account at https://www.maxmind.com/en/geolite2/signup
-# 2. Download GeoLite2-Country.mmdb and GeoLite2-ASN.mmdb  
+# 2. Download GeoLite2-Country.mmdb and GeoLite2-ASN.mmdb
 # 3. Place both files in data/geoip/
 # These files are gitignored and must be downloaded locally by each team member.
 

@@ -24,7 +24,7 @@ from __future__ import annotations
 import argparse
 import json
 from pathlib import Path
-from typing import Any, Dict, Iterable, List, Sequence, Union
+from typing import Any, Dict, List, Union
 import xml.etree.ElementTree as ET
 
 import numpy as np

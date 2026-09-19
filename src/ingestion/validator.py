@@ -13,12 +13,12 @@ import argparse
 import ipaddress
 from pathlib import Path
 import re
-from typing import Any, Dict, List, Set, Tuple, Union
+from typing import Any, Dict, List, Set, Tuple
 
 import numpy as np
 import pandas as pd
 
-from src.ingestion.parser import EXPECTED_COLUMNS, parse_file
+from src.ingestion.parser import parse_file
 from src.utils.logging_config import get_logger
 
 logger = get_logger(__name__)
@@ -242,7 +242,7 @@ def main() -> None:
     print(f"Duplicate TXIDs:               {len(issues['duplicate_txids']):,}")
     print(f"Address/Amount Count Mismatch: {len(issues['mismatched_address_amount_counts']):,}")
     print(f"Invalid IP Addresses:          {len(issues['invalid_ips']):,}")
-    print(f"Null / NaN Columns:")
+    print("Null / NaN Columns:")
     if issues["null_fields"]:
         for col, count in issues["null_fields"].items():
             print(f"  - {col}: {count:,} null rows")

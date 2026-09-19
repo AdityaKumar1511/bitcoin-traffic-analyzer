@@ -508,7 +508,7 @@ def load_processed_data() -> dict:
     alerts_df = pd.read_csv(alerts_file, index_col=0) if alerts_file.is_file() else pd.DataFrame()
     raw_df = parse_file(tx_file) if tx_file.is_file() else pd.DataFrame()
     gt_df = pd.read_csv(gt_file) if gt_file.is_file() else pd.DataFrame()
-    
+
     peel_chains = []
     if peel_file.is_file():
         with open(peel_file, "r", encoding="utf-8") as f:
