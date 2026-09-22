@@ -8,6 +8,11 @@ from __future__ import annotations
 import json
 from pathlib import Path
 import sys
+from typing import Any
+
+import pandas as pd
+import plotly.express as px
+import streamlit as st
 import yaml
 
 # Ensure repository root is in Python module search path
@@ -15,21 +20,16 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
-import pandas as pd
-import plotly.express as px
-import plotly.graph_objects as go
-import streamlit as st
-
-from dashboard.components.alert_table import render_alert_table
-from dashboard.components.detail_view import render_detail_view
-from dashboard.components.link_analysis_graph import render_link_analysis_graph
-from dashboard.report_export import generate_case_report
-from src.feedback.feedback_store import FeedbackStore
-from src.graph.builder import build_graph
-from src.graph.heuristics import apply_change_address_heuristic, apply_common_input_heuristic
-from src.ingestion.parser import parse_file
-from src.scoring import run_full_pipeline
-from src.utils.paths import get_project_root
+from dashboard.components.alert_table import render_alert_table  # noqa: E402
+from dashboard.components.detail_view import render_detail_view  # noqa: E402
+from dashboard.components.link_analysis_graph import render_link_analysis_graph  # noqa: E402
+from dashboard.report_export import generate_case_report  # noqa: E402
+from src.feedback.feedback_store import FeedbackStore  # noqa: E402
+from src.graph.builder import build_graph  # noqa: E402
+from src.graph.heuristics import apply_change_address_heuristic, apply_common_input_heuristic  # noqa: E402
+from src.ingestion.parser import parse_file  # noqa: E402
+from src.scoring import run_full_pipeline  # noqa: E402
+from src.utils.paths import get_project_root  # noqa: E402
 
 
 # Page configuration
@@ -808,7 +808,7 @@ def main() -> None:
         with col_geo2:
             st.markdown("#### High-Risk ASN Threat Intelligence")
             high_risk_yaml = root / "config" / "high_risk_asns.yaml"
-            high_risk_data = {}
+            high_risk_data: dict[str, Any] = {}
             if high_risk_yaml.is_file():
                 try:
                     with open(high_risk_yaml, "r", encoding="utf-8") as yf:
@@ -963,7 +963,7 @@ def main() -> None:
             recall = true_pos / len(gt_criminal_wallets) if gt_criminal_wallets else 0.0
             f1 = 2 * (precision * recall) / (precision + recall) if (precision + recall) > 0 else 0.0
 
-            b1, b2, b3, b4 = st.columns(4)
+            b1, b2, b3, b4, b5 = st.columns(5)
             with b1:
                 st.metric("Ground Truth Criminals", f"{len(gt_criminal_wallets):,}")
             with b2:
@@ -972,6 +972,8 @@ def main() -> None:
                 st.metric("Precision (Lead Purity)", f"{precision:.2%}")
             with b4:
                 st.metric("Recall (Detection Rate)", f"{recall:.2%}")
+            with b5:
+                st.metric("F1-Score", f"{f1:.2%}")
 
 
 if __name__ == "__main__":

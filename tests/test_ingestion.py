@@ -2,23 +2,25 @@
 Unit tests for data ingestion parser (CSV, JSON, XML).
 """
 
-from datetime import datetime, timezone
 import json
 from pathlib import Path
 import tempfile
 import unittest
+from unittest.mock import MagicMock, patch
 
+import geoip2.errors
 import numpy as np
 import pandas as pd
 
+from src.ingestion.geoip_enricher import GeoIPEnricher, enrich_dataframe
 from src.ingestion.parser import (
     EXPECTED_COLUMNS,
-    normalize_dataframe,
     parse_csv,
     parse_file,
     parse_json,
     parse_xml,
 )
+from src.ingestion.validator import get_clean_subset, validate_transactions
 
 
 class TestIngestionParser(unittest.TestCase):
@@ -183,9 +185,6 @@ class TestIngestionParser(unittest.TestCase):
             parse_file(self.temp_path / "nonexistent.csv")
 
 
-from src.ingestion.validator import get_clean_subset, validate_transactions
-
-
 class TestTransactionValidator(unittest.TestCase):
     def setUp(self) -> None:
         self.valid_row = {
@@ -255,11 +254,6 @@ class TestTransactionValidator(unittest.TestCase):
         # Only Row 7 is completely clean
         self.assertEqual(len(clean_df), 1)
         self.assertEqual(clean_df.iloc[0]["txid"], "7" * 64)
-
-
-from unittest.mock import MagicMock, patch
-from src.ingestion.geoip_enricher import GeoIPEnricher, enrich_dataframe
-import geoip2.errors
 
 
 class TestGeoIPEnricher(unittest.TestCase):

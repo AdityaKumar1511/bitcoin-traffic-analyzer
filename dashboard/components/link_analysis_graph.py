@@ -5,9 +5,8 @@ Interactive Link-Analysis Graph Component — Enterprise Forensic Theme.
 from __future__ import annotations
 
 import tempfile
-from typing import Any, Dict, List, Optional, Set
+from typing import Set
 import networkx as nx
-import pandas as pd
 from pyvis.network import Network
 import streamlit as st
 import streamlit.components.v1 as components

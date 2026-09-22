@@ -11,8 +11,7 @@ investigator-actionable natural-language explanations with severity-scaled wordi
 
 from __future__ import annotations
 
-from typing import Any, Dict, List, Optional, Union
-import pandas as pd
+from typing import Any, Dict, List, Optional
 
 from src.utils.logging_config import get_logger
 
@@ -307,8 +306,8 @@ class ReasonGenerator:
             )
         elif asn_cat == "HIGH_RISK_JURISDICTION":
             evidence_points.append(
-                f"🌐 **High-Risk Jurisdiction:** Broadcast originated from a jurisdiction "
-                f"flagged as high-risk for financial crime or with limited cooperation treaties."
+                "🌐 **High-Risk Jurisdiction:** Broadcast originated from a jurisdiction "
+                "flagged as high-risk for financial crime or with limited cooperation treaties."
             )
 
         if isinstance(obs_count, (int, float)) and obs_count > 1 and ip:
@@ -366,8 +365,8 @@ class ReasonGenerator:
 
         if not evidence_points:
             detail_lines.append(
-                f"- Statistical deviation detected across multiple behavioral dimensions. "
-                f"Manual review recommended."
+                "- Statistical deviation detected across multiple behavioral dimensions. "
+                "Manual review recommended."
             )
 
         detailed_justification = "\n".join(detail_lines)

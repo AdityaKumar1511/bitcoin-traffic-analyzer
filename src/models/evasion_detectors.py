@@ -18,10 +18,9 @@ from __future__ import annotations
 import argparse
 from collections import defaultdict
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Set, Tuple, Union
+from typing import Any, Dict, List, Optional, Set, Tuple
 
 import networkx as nx
-import numpy as np
 import pandas as pd
 
 from src.graph.builder import build_graph
@@ -399,7 +398,7 @@ def main() -> None:
             )
             detected_cj_txids = set(coinjoin_df[coinjoin_df["is_coinjoin"]]["txid"])
             cj_overlap = detected_cj_txids.intersection(gt_cj_txids)
-            print(f"CoinJoin Mixing (TXIDs):")
+            print("CoinJoin Mixing (TXIDs):")
             print(f"  Ground Truth: {len(gt_cj_txids):,} | Detected: {len(detected_cj_txids):,} | Overlap: {len(cj_overlap):,}")
             if gt_cj_txids:
                 print(f"  Recall: {len(cj_overlap) / len(gt_cj_txids):.1%}")
@@ -420,7 +419,7 @@ def main() -> None:
                 detected_peel_txids.update(pc.get("chain_txids", []))
                 detected_peel_txids.update(pc.get("feeder_txids", []))
             peel_overlap = detected_peel_wallets.intersection(gt_peel_wallets)
-            print(f"\nRansomware Peel Chains (All Pattern Wallets):")
+            print("\nRansomware Peel Chains (All Pattern Wallets):")
             print(f"  Ground Truth Wallets: {len(gt_peel_wallets):,} | Detected: {len(detected_peel_wallets):,} | Overlap: {len(peel_overlap):,}")
             if gt_peel_wallets:
                 print(f"  Recall: {len(peel_overlap) / len(gt_peel_wallets):.1%}")
@@ -435,7 +434,7 @@ def main() -> None:
                     & (gt_df["entity_type"] == "wallet")
                 ]["entity_id"]
             )
-            print(f"\nSame-Actor Multi-Wallet Cluster:")
+            print("\nSame-Actor Multi-Wallet Cluster:")
             print(f"  Ground Truth Cluster Wallets: {len(gt_cluster_wallets):,}")
 
             print("=" * 65 + "\n")

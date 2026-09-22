@@ -12,15 +12,13 @@ from __future__ import annotations
 import argparse
 from collections import defaultdict
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Set, Tuple, Union
+from typing import Any, Dict, List, Optional, Set
 
 import networkx as nx
-import numpy as np
 import pandas as pd
 
-from src.features import extract_all_features
-from src.graph.builder import build_graph, get_nodes_by_type
-from src.graph.heuristics import apply_change_address_heuristic, apply_common_input_heuristic, get_wallet_clusters
+from src.graph.builder import build_graph
+from src.graph.heuristics import apply_common_input_heuristic, get_wallet_clusters
 from src.ingestion.parser import parse_file
 from src.utils.logging_config import get_logger
 

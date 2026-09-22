@@ -14,7 +14,7 @@ Supports:
 
 from __future__ import annotations
 
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any, Dict, List, Optional, Tuple
 import numpy as np
 import pandas as pd
 from sklearn.ensemble import IsolationForest, RandomForestClassifier, GradientBoostingClassifier
@@ -124,7 +124,9 @@ class ModelExplainer:
             if hasattr(model, "decision_function"):
                 kernel_fn = model.decision_function
             elif hasattr(model, "predict_proba"):
-                kernel_fn = lambda x: model.predict_proba(x)[:, 1]
+                def _proba_fn(x: Any) -> Any:
+                    return model.predict_proba(x)[:, 1]
+                kernel_fn = _proba_fn
             elif hasattr(model, "predict"):
                 kernel_fn = model.predict
 

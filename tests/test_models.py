@@ -3,7 +3,6 @@ Unit tests for AI/ML Models, Network Correlation, Clustering, and Taint Propagat
 """
 
 import unittest
-import numpy as np
 import pandas as pd
 import networkx as nx
 
@@ -12,8 +11,6 @@ from src.graph.heuristics import apply_change_address_heuristic, apply_common_in
 from src.features import extract_all_features
 from src.models.anomaly import (
     AnomalyDetector,
-    IsolationForestDetector,
-    ReconstructionAnomalyDetector,
     detect_transaction_anomalies,
     detect_wallet_anomalies,
 )

@@ -5,11 +5,8 @@ Unit tests for composite scoring, reason generation, and report export.
 from pathlib import Path
 import tempfile
 import unittest
-import numpy as np
 import pandas as pd
-import networkx as nx
 
-from src.scoring import CompositeScorer, run_full_pipeline
 from src.explainability.reason_generator import ReasonGenerator
 from src.feedback.feedback_store import FeedbackStore
 from dashboard.report_export import generate_case_report
@@ -57,12 +54,15 @@ class TestScoring(unittest.TestCase):
         record = fb_store.get_feedback("1TestWallet")
 
         self.assertIsNotNone(record)
+        assert record is not None
         self.assertEqual(record["status"], "CONFIRMED")
         self.assertEqual(record["notes"], "Verified criminal entity")
 
         # Update to false positive
         fb_store.set_feedback("1TestWallet", "FALSE_POSITIVE", notes="Legitimate exchange")
         record_updated = fb_store.get_feedback("1TestWallet")
+        self.assertIsNotNone(record_updated)
+        assert record_updated is not None
         self.assertEqual(record_updated["status"], "FALSE_POSITIVE")
 
     def test_report_export(self) -> None:

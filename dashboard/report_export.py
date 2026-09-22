@@ -9,20 +9,19 @@ from __future__ import annotations
 
 import argparse
 from datetime import datetime, timezone
-import json
 from pathlib import Path
 import sys
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any, List, Optional, Union
+
+import pandas as pd
 
 # Ensure repository root is in Python module search path
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
-import pandas as pd
-
-from src.utils.logging_config import get_logger
-from src.utils.paths import get_project_root
+from src.utils.logging_config import get_logger  # noqa: E402
+from src.utils.paths import get_project_root  # noqa: E402
 
 
 logger = get_logger(__name__)
@@ -61,11 +60,7 @@ def generate_pdf_report(
     styles = getSampleStyleSheet()
 
     # Custom styles matching cyber intelligence forensic document theme
-    primary_emerald = colors.HexColor("#00DC82")
-    dark_bg = colors.HexColor("#0B130E")
-    text_light = colors.HexColor("#E2E8F0")
     coral_alert = colors.HexColor("#FF4B4B")
-    accent_mint = colors.HexColor("#34D399")
 
     title_style = ParagraphStyle(
         "DocTitle",
@@ -226,7 +221,6 @@ def generate_pdf_report(
             clean_line = re.sub(r"`(.+?)`", r"<font name='Courier'>\1</font>", clean_line)
             elements.append(Paragraph(clean_line, body_style))
             elements.append(Spacer(1, 2))
-
 
     elements.append(Spacer(1, 14))
 
@@ -409,7 +403,7 @@ def main() -> None:
     args = parser.parse_args()
 
     report_path = generate_case_report(args.wallet_id, output_dir=args.output, format=args.format)
-    print(f"\n[+] Forensic case report successfully generated:")
+    print("\n[+] Forensic case report successfully generated:")
     print(f"    Path: {report_path}\n")
 
 

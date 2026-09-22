@@ -22,7 +22,7 @@ import argparse
 from collections import defaultdict
 import json
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Set, Tuple, Union
+from typing import Any, Dict, List, Optional, Set, Union
 
 import networkx as nx
 import numpy as np
@@ -34,7 +34,7 @@ from src.explainability.shap_explainer import ModelExplainer
 from src.features import extract_all_features
 from src.feedback.feedback_store import FeedbackStore
 from src.graph.builder import build_graph, get_nodes_by_type
-from src.graph.heuristics import apply_change_address_heuristic, apply_common_input_heuristic, get_wallet_clusters
+from src.graph.heuristics import apply_change_address_heuristic, apply_common_input_heuristic
 from src.ingestion.parser import parse_file
 from src.models.anomaly import AnomalyDetector
 from src.models.clustering import EntityClusterer
@@ -42,8 +42,7 @@ from src.models.evasion_detectors import detect_coinjoin_transactions, detect_mi
 from src.graph.peel_chain import detect_peel_chains
 from src.models.taint_propagation import TaintPropagator
 from src.utils.logging_config import get_logger
-from src.utils.paths import get_project_root, load_config
-from src.utils.schema import InvestigativeAlert, compute_risk_level
+from src.utils.schema import compute_risk_level
 
 logger = get_logger(__name__)
 
@@ -384,7 +383,7 @@ def evaluate_against_ground_truth(
 
     # Get ground truth criminal wallets
     gt_wallets = set(
-        gt_df[(gt_df["entity_type"] == "wallet") & (gt_df["is_criminal"] == True)]["entity_id"]
+        gt_df[(gt_df["entity_type"] == "wallet") & (gt_df["is_criminal"])]["entity_id"]
     )
 
     # Get flagged wallets
@@ -404,7 +403,7 @@ def evaluate_against_ground_truth(
     if "pattern_type" in gt_df.columns:
         for pattern in gt_df["pattern_type"].unique():
             pattern_wallets = set(
-                gt_df[(gt_df["pattern_type"] == pattern) & (gt_df["entity_type"] == "wallet") & (gt_df["is_criminal"] == True)]["entity_id"]
+                gt_df[(gt_df["pattern_type"] == pattern) & (gt_df["entity_type"] == "wallet") & (gt_df["is_criminal"])]["entity_id"]
             )
             if pattern_wallets:
                 pattern_tp = len(flagged_wallets & pattern_wallets)
@@ -508,7 +507,7 @@ def run_full_pipeline(
     logger.info("4/9 Running anomaly detection & entity clustering...")
     anomaly_detector = AnomalyDetector()
     wallet_anomalies = anomaly_detector.fit_predict_wallets(wallet_feats)
-    tx_anomalies = anomaly_detector.fit_predict_transactions(tx_feats)
+    anomaly_detector.fit_predict_transactions(tx_feats)
 
     clusterer = EntityClusterer()
     clusters_df = clusterer.cluster_entities(graph, df)

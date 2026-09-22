@@ -27,10 +27,9 @@ from __future__ import annotations
 import argparse
 from datetime import datetime, timedelta, timezone
 import hashlib
-import ipaddress
 from pathlib import Path
 import random
-from typing import Any, Dict, List, Set, Tuple
+from typing import Any, Dict, List, Tuple
 import uuid
 
 import numpy as np
@@ -231,8 +230,8 @@ def generate_pattern_a_ransomware(
       peeling off a smaller amount each time.
     - Collector and peel chain transactions share the same source IP.
     """
-    transactions = []
-    ground_truth = []
+    transactions: list[dict[str, Any]] = []
+    ground_truth: list[dict[str, Any]] = []
     total_seconds = int((end_dt - start_dt).total_seconds())
 
     while len(transactions) < target_count:
@@ -653,7 +652,7 @@ def parse_args() -> argparse.Namespace:
 def main() -> None:
     args = parse_args()
 
-    print(f"[*] Starting synthetic Bitcoin transaction generation...")
+    print("[*] Starting synthetic Bitcoin transaction generation...")
     print(f"    - Target transactions: {args.num_transactions}")
     print(f"    - Random seed:         {args.seed}")
     print(f"    - Output path:         {args.output}")
@@ -686,7 +685,7 @@ def main() -> None:
     for etype, count in entity_counts.items():
         print(f"  - {etype}s: {count}")
     print("-" * 55)
-    print(f"Files Saved:")
+    print("Files Saved:")
     print(f"  1. Main Dataset: {output_path}")
     print(f"  2. Ground Truth: {gt_path}")
     print("=" * 55 + "\n")

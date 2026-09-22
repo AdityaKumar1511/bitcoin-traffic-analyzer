@@ -6,7 +6,7 @@ Includes SHAP-backed explainability charts, entity metadata, taint paths, and an
 from __future__ import annotations
 
 import ast
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, Optional
 import pandas as pd
 import plotly.graph_objects as go
 import streamlit as st

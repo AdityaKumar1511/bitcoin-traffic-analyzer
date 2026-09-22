@@ -9,6 +9,16 @@ import networkx as nx
 import pandas as pd
 
 from src.graph.builder import build_graph, get_graph_summary, get_nodes_by_type
+from src.graph.heuristics import (
+    apply_change_address_heuristic,
+    apply_common_input_heuristic,
+    get_wallet_clusters,
+)
+from src.graph.peel_chain import (
+    annotate_graph_with_peel_chains,
+    detect_peel_chains,
+    is_peel_transaction,
+)
 from src.ingestion.parser import parse_csv
 
 
@@ -152,13 +162,6 @@ class TestGraphBuilder(unittest.TestCase):
         self.assertEqual(summary["broadcast_edges"], 2000)
 
 
-from src.graph.heuristics import (
-    apply_change_address_heuristic,
-    apply_common_input_heuristic,
-    get_wallet_clusters,
-)
-
-
 class TestGraphHeuristics(unittest.TestCase):
     def setUp(self) -> None:
         self.tx1_id = "tx1" + "a" * 61
@@ -204,7 +207,6 @@ class TestGraphHeuristics(unittest.TestCase):
         self.assertTrue(graph.has_edge("wB", "wA"))
         self.assertTrue(graph.has_edge("wA", "wC"))
 
-        edge_ab = [d for _, _, d in graph.edges("wA", data=True) if d.get("edge_type") == "common_input_ownership" and _ == "wA"]
         # Find edge to wB
         ab_data = None
         for u, v, d in graph.edges(data=True):
@@ -212,6 +214,7 @@ class TestGraphHeuristics(unittest.TestCase):
                 ab_data = d
                 break
         self.assertIsNotNone(ab_data)
+        assert ab_data is not None
         self.assertEqual(ab_data["co_occurrence_count"], 2)
 
     def test_apply_change_address_heuristic(self) -> None:
@@ -247,13 +250,6 @@ class TestGraphHeuristics(unittest.TestCase):
         # wPay and wChange are separate singleton clusters
         self.assertNotEqual(clusters["wA"], clusters["wPay"])
         self.assertNotEqual(clusters["wPay"], clusters["wChange"])
-
-
-from src.graph.peel_chain import (
-    annotate_graph_with_peel_chains,
-    detect_peel_chains,
-    is_peel_transaction,
-)
 
 
 class TestPeelChainDetection(unittest.TestCase):
